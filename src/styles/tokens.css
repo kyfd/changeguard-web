@@ -1,0 +1,186 @@
+/* ============================================================
+   ChangeGuard · Immersive Deck
+   Near-black void. Cyan light. Glass. Live constellation.
+   ============================================================ */
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../assets/fonts/space-grotesk-latin.woff2") format("woff2");
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../assets/fonts/space-grotesk-latin-600.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../assets/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../assets/fonts/jetbrains-mono-latin-500.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --bg-void: #05070c;
+  --bg-deep: #070b12;
+  --bg-base: #0a1018;
+  --bg-elev: #0d141f;
+  --bg-glass: rgba(10, 16, 26, 0.62);
+  --bg-glass-strong: rgba(12, 18, 30, 0.82);
+  --surface: #0e1622;
+  --surface-2: #141e2c;
+  --bg-aurora-1: #061018;
+  --bg-aurora-2: #05070c;
+  --bg-aurora-3: #05070c;
+
+  --text: #d7e6ee;
+  --text-strong: #f3fbff;
+  --text-mute: #8aa0b0;
+  --text-faint: #6a7e8e;
+  --text-inverse: #041016;
+
+  --brand: #3ee0d0;
+  --brand-bright: #7af0e4;
+  --brand-deep: #1aa89a;
+  --brand-soft: rgba(62, 224, 208, 0.14);
+
+  --gold: var(--brand);
+  --gold-bright: var(--brand-bright);
+  --gold-deep: var(--brand-deep);
+  --gold-soft: var(--brand-soft);
+  --ice: var(--brand);
+  --ice-bright: var(--brand-bright);
+  --ice-deep: var(--brand-deep);
+  --ice-soft: var(--brand-soft);
+  --cyan: var(--brand);
+  --cyan-bright: var(--brand-bright);
+  --cyan-soft: var(--brand-soft);
+  --blue: #5b9bff;
+  --blue-bright: #8bb6ff;
+  --blue-soft: rgba(91, 155, 255, 0.14);
+  --primary: var(--brand);
+  --primary-grad: linear-gradient(180deg, #7af0e4 0%, #1aa89a 100%);
+  --primary-grad-soft: linear-gradient(180deg, rgba(62, 224, 208, 0.16), rgba(26, 168, 154, 0.06));
+
+  --cinnabar: #ff5d6c;
+  --cinnabar-soft: rgba(255, 93, 108, 0.14);
+  --amber: #f0b429;
+  --amber-soft: rgba(240, 180, 41, 0.14);
+  --red: #ff5d6c;
+  --red-bright: #ff8a94;
+  --red-soft: rgba(255, 93, 108, 0.14);
+  --jade: #3dd68c;
+  --jade-bright: #6ee7b0;
+  --jade-soft: rgba(61, 214, 140, 0.14);
+  --green: var(--jade);
+  --green-bright: var(--jade-bright);
+  --green-soft: var(--jade-soft);
+  --purple: #6a7e8e;
+  --purple-soft: rgba(106, 126, 142, 0.14);
+
+  --risk-high: #ff5d6c;
+  --risk-medium: #f0b429;
+  --risk-low: #3ee0d0;
+  --risk-unknown: #6a7e8e;
+
+  --line: rgba(180, 220, 230, 0.10);
+  --line-bright: rgba(62, 224, 208, 0.42);
+  --line-strong: rgba(180, 220, 230, 0.18);
+  --neon-edge: 1px solid var(--line-bright);
+
+  --r-xs: 2px;
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-pill: 999px;
+
+  --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+  --font-brand: "Space Grotesk", var(--font-sans);
+  --font-latin: var(--font-brand);
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Consolas", monospace;
+
+  --glow-cyan: 0 0 28px rgba(62, 224, 208, 0.28);
+  --glow-blue: 0 0 22px rgba(91, 155, 255, 0.22);
+  --glow-red: 0 0 18px rgba(255, 93, 108, 0.22);
+  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.32);
+  --shadow-pop: 0 28px 80px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
+
+  --glass: var(--bg-glass);
+  --glass-hi: var(--bg-glass-strong);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: var(--ease);
+  --dur-fast: 0.16s;
+  --dur: 0.28s;
+  --dur-slow: 0.55s;
+
+  --sidebar: 236px;
+  --topbar: 58px;
+
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg-void);
+  --font-sans-stack: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="light"] {
+  --bg-void: #eef3f6;
+  --bg-deep: #e2eaef;
+  --bg-base: #ffffff;
+  --bg-elev: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.78);
+  --bg-glass-strong: rgba(255, 255, 255, 0.92);
+  --surface: #ffffff;
+  --surface-2: #f3f7f9;
+  --text: #1a2a32;
+  --text-strong: #0b161c;
+  --text-mute: #4d6270;
+  --text-faint: #6d8290;
+  --text-inverse: #041016;
+  --brand: #0f8a7e;
+  --brand-bright: #0b6b62;
+  --brand-deep: #0a5a53;
+  --brand-soft: rgba(15, 138, 126, 0.12);
+  --gold: var(--brand);
+  --gold-bright: var(--brand-bright);
+  --gold-deep: var(--brand-deep);
+  --gold-soft: var(--brand-soft);
+  --ice: var(--brand);
+  --ice-bright: var(--brand-bright);
+  --cyan: var(--brand);
+  --cyan-bright: var(--brand-bright);
+  --primary: var(--brand);
+  --cinnabar: #c44550;
+  --red: #c44550;
+  --red-bright: #a8333d;
+  --amber: #b07d22;
+  --jade: #1b8f62;
+  --line: rgba(15, 36, 48, 0.10);
+  --line-bright: rgba(15, 138, 126, 0.36);
+  --glow-cyan: none;
+  --shadow-panel: 0 16px 40px rgba(15, 36, 48, 0.08);
+  color-scheme: light;
+}

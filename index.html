@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#05070c" />
+    <title>ChangeGuard · 企业变更风险治理</title>
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem('changeguard-theme') || 'dark'
+          var r = p === 'system'
+            ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+            : p
+          if (r !== 'light') r = 'dark'
+          document.documentElement.setAttribute('data-theme', r)
+          document.documentElement.style.colorScheme = r
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
