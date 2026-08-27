@@ -125,8 +125,8 @@
   border: 1px solid var(--line-bright);
   border-radius: var(--r-lg);
   overflow: hidden;
-  background: #05070c;
-  box-shadow: inset 0 0 80px rgba(62, 224, 208, 0.08);
+  background: var(--bg-void);
+  box-shadow: var(--shadow-panel);
 }
 .chamber-wall {
   position: absolute;

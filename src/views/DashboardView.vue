@@ -123,8 +123,9 @@ function openDeck() {
 .now-card strong {
   display: block; margin: 0.45rem 0 0.25rem;
   font-size: 2.4rem; color: var(--brand-bright);
-  font-weight: 650; font-family: var(--font-brand); line-height: 1;
-  text-shadow: 0 0 22px rgba(62, 224, 208, 0.35);
+  font-weight: 650; font-family: var(--font-mono); line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .now-card strong em { font-style: normal; font-size: 0.5em; margin-left: 0.08em; color: var(--text-mute); }
 .now-card small { color: var(--text-mute); font-size: 0.82rem; line-height: 1.45; }

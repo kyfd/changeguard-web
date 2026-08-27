@@ -111,7 +111,7 @@ function hexRgb(hex: string): [number, number, number] {
   const raw = hex.replace('#', '').trim()
   if (raw.length === 3) return [parseInt(raw[0] + raw[0], 16), parseInt(raw[1] + raw[1], 16), parseInt(raw[2] + raw[2], 16)]
   if (raw.length >= 6) return [parseInt(raw.slice(0, 2), 16), parseInt(raw.slice(2, 4), 16), parseInt(raw.slice(4, 6), 16)]
-  return [62, 224, 208]
+  return [77, 139, 255]
 }
 
 function posOf(n: NodeDef, t: number, cx: number, cy: number, rx: number, ry: number) {
@@ -163,7 +163,7 @@ function frame(now: number) {
 
   ctx.clearRect(0, 0, w, h)
 
-  const [ir, ig, ib] = hexRgb(cssVar('--brand', '#3ee0d0'))
+  const [ir, ig, ib] = hexRgb(cssVar('--brand', '#4d8bff'))
   const [tr, tg, tb] = hexRgb(cssVar('--text', '#d7e6ee'))
   const [ar, ag, ab] = hexRgb(cssVar('--amber', '#f0b429'))
   const ice = (a: number) => `rgba(${ir},${ig},${ib},${a})`

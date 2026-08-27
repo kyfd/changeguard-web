@@ -25,7 +25,7 @@ function paint(p: ThemePref) {
   root.setAttribute('data-theme', next)
   root.style.colorScheme = next
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', next === 'light' ? '#eef3f6' : '#05070c')
+  if (meta) meta.setAttribute('content', next === 'light' ? '#f4f6f9' : '#0a0d13')
   const scheme = document.querySelector('meta[name="color-scheme"]')
   if (scheme) scheme.setAttribute('content', next)
 }

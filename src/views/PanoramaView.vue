@@ -151,7 +151,7 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   min-height: 100dvh;
   overflow: hidden;
   color: var(--text);
-  background: #05070c;
+  background: var(--bg-void);
 }
 .field {
   position: absolute;
@@ -210,9 +210,9 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   display: flex;
   gap: 1.6rem;
   padding: 0.55rem 1.2rem;
-  border-radius: 999px;
-  background: rgba(8, 14, 22, 0.48);
-  border: 1px solid rgba(62, 224, 208, 0.16);
+  border-radius: var(--r-pill);
+  background: rgba(10, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(14px);
 }
 .stats button {
@@ -248,9 +248,9 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   gap: 0.4rem;
   align-items: center;
   padding: 0.4rem 0.55rem;
-  border-radius: 8px;
-  background: rgba(8, 14, 22, 0.5);
-  border: 1px solid rgba(62, 224, 208, 0.12);
+  border-radius: var(--r-lg);
+  background: rgba(10, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   cursor: pointer;
   font-size: 0.78rem;
 }

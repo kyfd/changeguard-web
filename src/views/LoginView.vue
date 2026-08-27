@@ -110,7 +110,7 @@ async function submit() {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: #05070c;
+  background: var(--bg-void);
 }
 .field-photo {
   position: absolute;
@@ -163,9 +163,9 @@ async function submit() {
   z-index: 3;
   width: min(400px, 92vw);
   padding: 1.7rem 1.65rem 1.35rem;
-  border-radius: 18px;
-  background: rgba(8, 14, 22, 0.62);
-  border: 1px solid rgba(122, 240, 228, 0.22);
+  border-radius: var(--r-xl);
+  background: rgba(10, 14, 20, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
@@ -182,11 +182,10 @@ async function submit() {
   height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: var(--r-lg);
   color: var(--brand-bright);
   background: var(--brand-soft);
   border: 1px solid var(--line-bright);
-  box-shadow: var(--glow-cyan);
 }
 .brand strong {
   display: block;
@@ -216,7 +215,6 @@ async function submit() {
   bottom: -1px;
   height: 2px;
   background: var(--brand);
-  box-shadow: 0 0 12px rgba(62, 224, 208, 0.7);
 }
 .card h2 {
   font-size: 1.12rem;
