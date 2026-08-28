@@ -31,12 +31,13 @@ withDefaults(defineProps<{
 </template>
 
 <style scoped>
-.ttable { width: 100%; min-height: 0; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); overflow: auto; }
+.ttable { width: 100%; min-height: 0; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); overflow: auto; }
 .ttable table { width: 100%; border-collapse: collapse; }
-thead { background: var(--surface-2); }
+/* 表头吸顶：长列表滚动时仍能对上列义 */
+thead { background: var(--surface-2); position: sticky; top: 0; z-index: 1; }
 th {
-  padding: .78rem 1.1rem;
-  font-size: .8rem;
+  padding: .5rem 0.9rem;
+  font-size: .76rem;
   font-weight: 500;
   color: var(--text-mute);
   letter-spacing: 0;
@@ -44,7 +45,8 @@ th {
   white-space: nowrap;
   text-align: left;
 }
-td { padding: .82rem 1.1rem; font-size: .92rem; color: var(--text); border-bottom: 1px solid var(--line); line-height: 1.5; }
+/* 工单表是扫读界面，行高按可比对性收紧而非按舒适度撑开 */
+td { padding: .5rem 0.9rem; font-size: .86rem; color: var(--text); border-bottom: 1px solid var(--line); line-height: 1.45; }
 tbody tr { transition: background var(--dur); }
 tbody tr:hover { background: var(--gold-soft); }
 tbody tr:last-child td { border-bottom: none; }
