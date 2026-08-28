@@ -3,6 +3,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useWorkspaceStore } from '@/stores/workspace'
 import TechIcon from '@/components/TechIcon.vue'
+import BrandLogo from '@/components/BrandLogo.vue'
 import NeonButton from '@/components/NeonButton.vue'
 import { APIError } from '@/api/client'
 import { useTheme } from '@/composables/useTheme'
@@ -60,7 +61,10 @@ const steps = computed(() =>
   }),
 )
 
-const blocked = computed(() => cursor.value >= BLOCK_AT)
+/* 必须等风险评级落定，光标到达该步时判定尚未完成 */
+const blocked = computed(
+  () => cursor.value > BLOCK_AT || (cursor.value === BLOCK_AT && phase.value === 'block'),
+)
 
 /* 导轨生长到当前节点：每步占 1/5，节点位于该步中部 */
 const progress = computed(() => {
@@ -128,15 +132,14 @@ async function submit() {
       <div class="aside-wash" aria-hidden="true"></div>
 
       <header class="lockup">
-        <span class="mark"><TechIcon name="shield" :size="17" /></span>
+        <span class="mark"><BrandLogo :size="26" :variant="blocked ? 'blocked' : 'default'" /></span>
         <strong>ChangeGuard</strong>
         <span class="lockup-sep" aria-hidden="true"></span>
         <span class="lockup-sub mono">CHANGE RISK CONTROL</span>
       </header>
 
       <div class="copy">
-        <h1>看见每一次<br>生产变更的风险。</h1>
-        <p class="lede">高危节点会亮起来 · 过不了门禁就进不了生产</p>
+        <h1>高危变更<br>到不了生产。</h1>
       </div>
 
       <ol
@@ -258,18 +261,18 @@ async function submit() {
   flex-wrap: wrap;
 }
 .mark {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: var(--r);
+  border-radius: var(--r-lg);
   color: var(--brand-bright);
   background: var(--brand-soft);
   border: 1px solid var(--line-bright);
 }
 .lockup strong {
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: var(--text-strong);
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -287,17 +290,11 @@ async function submit() {
 
 .copy { position: relative; max-width: 32rem; }
 .copy h1 {
-  font-size: clamp(2rem, 3.4vw, 3rem);
+  font-size: clamp(2.1rem, 3.6vw, 3.2rem);
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.18;
   letter-spacing: -0.02em;
   color: var(--text-strong);
-}
-.lede {
-  margin-top: 1rem;
-  color: var(--text-mute);
-  font-size: 1rem;
-  line-height: 1.6;
 }
 
 /* Governance pipeline: the product's core promise, made literal */
@@ -543,7 +540,6 @@ input:focus {
     border-bottom: 1px solid var(--line);
   }
   .copy h1 { font-size: 1.6rem; }
-  .lede { font-size: 0.92rem; }
   .pipe { display: none; }
   .pane { padding: 2rem 1.5rem 3rem; place-items: start center; }
 }
