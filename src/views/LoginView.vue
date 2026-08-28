@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useWorkspaceStore } from '@/stores/workspace'
 import TechIcon from '@/components/TechIcon.vue'
+import BrandLogo from '@/components/BrandLogo.vue'
 import NeonButton from '@/components/NeonButton.vue'
 import { APIError } from '@/api/client'
 import { useTheme } from '@/composables/useTheme'
@@ -26,6 +27,80 @@ const headline = computed(() =>
 const actionLabel = computed(() =>
   mode.value === 'login' ? '进入系统' : mode.value === 'register' ? '创建并进入' : '加入工作空间',
 )
+
+/* 登录页无法读取真实工单（未认证），此处为门禁流程的循环演示 */
+type Phase = 'idle' | 'run' | 'pass' | 'block'
+
+const STAGES = [
+  { label: '变更提交', pending: '等待提交', active: '接收变更单', settled: 'CHG-4821' },
+  { label: '静态校验', pending: '尚未开始', active: '解析 DDL…', settled: '12 项通过' },
+  { label: '风险评级', pending: '尚未评级', active: '比对规则…', settled: 'HIGH · 索引重建' },
+  { label: '独立审批', pending: '等待复核', active: '通知审批人…', settled: '已拦截' },
+  { label: '进入生产', pending: '门禁未放行', active: '', settled: '门禁未放行' },
+]
+
+const BLOCK_AT = 2 // 风险评级判定为高危，门禁在此拦截
+
+const cursor = ref(-1)
+const phase = ref<Phase>('idle')
+const reduceMotion =
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const steps = computed(() =>
+  STAGES.map((s, i) => {
+    if (reduceMotion) {
+      const st = i < BLOCK_AT ? 'pass' : i === BLOCK_AT ? 'block' : 'idle'
+      return { ...s, state: st as Phase, meta: i <= BLOCK_AT ? s.settled : s.pending }
+    }
+    if (i > cursor.value) return { ...s, state: 'idle' as Phase, meta: s.pending }
+    if (i === cursor.value) {
+      const meta = phase.value === 'run' ? s.active || s.pending : s.settled
+      return { ...s, state: phase.value, meta }
+    }
+    return { ...s, state: (i < BLOCK_AT ? 'pass' : 'block') as Phase, meta: s.settled }
+  }),
+)
+
+/* 必须等风险评级落定，光标到达该步时判定尚未完成 */
+const blocked = computed(
+  () => cursor.value > BLOCK_AT || (cursor.value === BLOCK_AT && phase.value === 'block'),
+)
+
+/* 导轨生长到当前节点：每步占 1/5，节点位于该步中部 */
+const progress = computed(() => {
+  if (reduceMotion) return (BLOCK_AT + 0.5) / STAGES.length
+  if (cursor.value < 0) return 0
+  return Math.min((cursor.value + 0.5) / STAGES.length, 1)
+})
+
+let timer: ReturnType<typeof setTimeout> | undefined
+function schedule(fn: () => void, ms: number) {
+  timer = setTimeout(fn, ms)
+}
+
+function advance() {
+  if (cursor.value >= BLOCK_AT + 1) {
+    // 停在拦截态，让用户看清结论，然后重来
+    schedule(() => {
+      cursor.value = -1
+      phase.value = 'idle'
+      advance()
+    }, 4200)
+    return
+  }
+  cursor.value += 1
+  phase.value = 'run'
+  schedule(() => {
+    phase.value = cursor.value < BLOCK_AT ? 'pass' : 'block'
+    schedule(advance, cursor.value === BLOCK_AT ? 1500 : 620)
+  }, 900)
+}
+
+onMounted(() => {
+  if (reduceMotion) return
+  schedule(advance, 500)
+})
+onBeforeUnmount(() => clearTimeout(timer))
 
 async function submit() {
   if (loading.value) return
@@ -52,55 +127,88 @@ async function submit() {
 
 <template>
   <div class="login">
-    <div class="field-photo" aria-hidden="true"></div>
-    <div class="field-veil" aria-hidden="true"></div>
-    <div class="copy">
-      <p class="eyebrow">CHANGE RISK CONTROL</p>
-      <h1>看见每一次<br>生产变更的风险。</h1>
-      <p class="lede">高危节点会亮起来 · 过不了门禁就进不了生产</p>
-    </div>
+    <section class="aside">
+      <div class="aside-grid" aria-hidden="true"></div>
+      <div class="aside-wash" aria-hidden="true"></div>
 
-    <section class="card" aria-label="身份验证">
-      <header class="brand">
-        <span class="mark"><TechIcon name="shield" :size="18" /></span>
-        <div>
-          <strong class="display">ChangeGuard</strong>
-          <span>企业变更风险治理</span>
-        </div>
+      <header class="lockup">
+        <span class="mark"><BrandLogo :size="26" :variant="blocked ? 'blocked' : 'default'" /></span>
+        <strong>ChangeGuard</strong>
+        <span class="lockup-sep" aria-hidden="true"></span>
+        <span class="lockup-sub mono">CHANGE RISK CONTROL</span>
       </header>
 
-      <div class="tabs" role="tablist">
-        <button type="button" :class="{ on: mode === 'login' }" @click="mode = 'login'">登录</button>
-        <button type="button" :class="{ on: mode === 'register' }" @click="mode = 'register'">注册</button>
-        <button type="button" :class="{ on: mode === 'invite' }" @click="mode = 'invite'">邀请</button>
+      <div class="copy">
+        <h1>高危变更<br>到不了生产。</h1>
       </div>
 
-      <h2>{{ headline }}</h2>
+      <ol
+        class="pipe"
+        :class="{ blocked }"
+        :style="{ '--progress': progress }"
+        aria-label="变更门禁流程演示"
+      >
+        <li v-for="s in steps" :key="s.label" :class="['pipe-step', s.state]">
+          <span class="pipe-node" aria-hidden="true"></span>
+          <span class="pipe-label">{{ s.label }}</span>
+          <transition name="meta" mode="out-in">
+            <span class="pipe-meta mono" :key="s.meta">{{ s.meta }}</span>
+          </transition>
+        </li>
+      </ol>
 
-      <form @submit.prevent="submit">
-        <label v-if="mode === 'register' || mode === 'invite'">
-          <span>姓名</span>
-          <input v-model="name" type="text" placeholder="请输入姓名" autocomplete="name" />
-        </label>
-        <label v-if="mode === 'invite'">
-          <span>邀请码</span>
-          <input v-model="inviteCode" type="text" placeholder="输入邀请码" />
-        </label>
-        <label v-if="mode !== 'invite'">
-          <span>企业邮箱</span>
-          <input v-model="email" type="email" placeholder="name@company.com" autocomplete="email" required />
-        </label>
-        <label>
-          <span>密码</span>
-          <input v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" required />
-        </label>
-        <div v-if="error" class="err" role="alert">{{ error }}</div>
-        <NeonButton type="submit" block :loading="loading" size="lg">{{ actionLabel }}</NeonButton>
-      </form>
+      <footer class="aside-foot mono" :class="{ halted: blocked }">
+        <span class="live" aria-hidden="true"></span>
+        <transition name="meta" mode="out-in">
+          <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '治理引擎在线' }}</span>
+        </transition>
+      </footer>
+    </section>
 
-      <button class="theme-switch" type="button" @click="theme.toggle()">
-        {{ theme.isLight.value ? '深色模式' : '浅色模式' }}
-      </button>
+    <section class="pane">
+      <section class="card" aria-label="身份验证">
+        <header class="brand">
+          <div>
+            <strong class="display">{{ headline }}</strong>
+            <span>使用企业账号继续</span>
+          </div>
+          <button class="theme-switch" type="button" @click="theme.toggle()">
+            <TechIcon :name="theme.isLight.value ? 'moon' : 'sun'" :size="15" />
+          </button>
+        </header>
+
+        <div class="tabs" role="tablist">
+          <button type="button" :class="{ on: mode === 'login' }" @click="mode = 'login'">登录</button>
+          <button type="button" :class="{ on: mode === 'register' }" @click="mode = 'register'">注册</button>
+          <button type="button" :class="{ on: mode === 'invite' }" @click="mode = 'invite'">邀请</button>
+        </div>
+
+        <form @submit.prevent="submit">
+          <label v-if="mode === 'register' || mode === 'invite'">
+            <span>姓名</span>
+            <input v-model="name" type="text" placeholder="请输入姓名" autocomplete="name" />
+          </label>
+          <label v-if="mode === 'invite'">
+            <span>邀请码</span>
+            <input v-model="inviteCode" type="text" placeholder="输入邀请码" />
+          </label>
+          <label v-if="mode !== 'invite'">
+            <span>企业邮箱</span>
+            <input v-model="email" type="email" placeholder="name@company.com" autocomplete="email" required />
+          </label>
+          <label>
+            <span>密码</span>
+            <input v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" required />
+          </label>
+          <div v-if="error" class="err" role="alert">
+            <TechIcon name="shield-alert" :size="15" />
+            <span>{{ error }}</span>
+          </div>
+          <NeonButton type="submit" block :loading="loading" size="lg">{{ actionLabel }}</NeonButton>
+        </form>
+
+        <p class="fineprint">所有登录行为将被记录并纳入审计日志</p>
+      </section>
     </section>
   </div>
 </template>
@@ -109,169 +217,330 @@ async function submit() {
 .login {
   position: fixed;
   inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  background: var(--bg-void);
   overflow: hidden;
-  background: #05070c;
-}
-.field-photo {
-  position: absolute;
-  inset: 0;
-  background: url("../assets/images/deck.jpg") center / cover no-repeat;
-  transform: scale(1.04);
-  animation: drift 28s ease-in-out infinite alternate;
-}
-.field-veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(5, 7, 12, 0.28) 0%, rgba(5, 7, 12, 0.18) 48%, rgba(5, 7, 12, 0.72) 100%),
-    linear-gradient(180deg, rgba(5, 7, 12, 0.18) 0%, rgba(5, 7, 12, 0.48) 100%);
 }
 
-.copy {
+/* ── Left: product narrative, drawn entirely in CSS ─────────── */
+.aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2.75rem;
+  padding: 3rem clamp(2rem, 5vw, 5rem);
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--line);
+}
+.aside-grid {
   position: absolute;
-  left: 4.2vw;
-  bottom: 8vh;
-  z-index: 2;
-  max-width: 28rem;
-  animation: float-up 0.7s var(--ease-out) both;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(120% 90% at 30% 40%, #000 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(120% 90% at 30% 40%, #000 35%, transparent 100%);
 }
-.eyebrow {
-  font-family: var(--font-brand);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  color: var(--brand);
-  margin-bottom: 0.85rem;
-}
-.copy h1 {
-  font-size: clamp(2.1rem, 4.2vw, 3.4rem);
-  font-weight: 650;
-  line-height: 1.18;
-  color: #f3fbff;
-  text-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-}
-.lede {
-  margin-top: 0.9rem;
-  color: rgba(215, 230, 238, 0.78);
-  font-size: 1rem;
+.aside-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(90% 70% at 18% 30%, var(--brand-soft) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-.card {
-  position: absolute;
-  top: 50%;
-  right: max(3.2vw, 1.6rem);
-  transform: translateY(-50%);
-  z-index: 3;
-  width: min(400px, 92vw);
-  padding: 1.7rem 1.65rem 1.35rem;
-  border-radius: 18px;
-  background: rgba(8, 14, 22, 0.62);
-  border: 1px solid rgba(122, 240, 228, 0.22);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  animation: float-up 0.7s 0.08s var(--ease-out) both;
-}
-.brand {
+.lockup {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 .mark {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
+  flex: none;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: var(--r-lg);
   color: var(--brand-bright);
   background: var(--brand-soft);
   border: 1px solid var(--line-bright);
-  box-shadow: var(--glow-cyan);
 }
-.brand strong {
-  display: block;
-  font-size: 1.08rem;
-  color: #fff;
+.lockup strong {
+  font-size: 1.15rem;
+  color: var(--text-strong);
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
-.brand span { font-size: 0.74rem; color: var(--text-faint); }
+.lockup-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line-strong);
+}
+.lockup-sub {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
+}
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 1.1rem;
+.copy { position: relative; max-width: 32rem; }
+.copy h1 {
+  font-size: clamp(2.1rem, 3.6vw, 3.2rem);
+  font-weight: 650;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
 }
-.tabs button {
-  flex: 1;
-  padding: 0.62rem 0.2rem 0.7rem;
-  font-size: 0.88rem;
-  color: var(--text-mute);
+
+/* Governance pipeline: the product's core promise, made literal */
+.pipe {
   position: relative;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 1.4rem;
 }
-.tabs button.on { color: #fff; }
-.tabs button.on::after {
+/* 静态导轨 */
+.pipe::before {
   content: "";
   position: absolute;
-  left: 22%;
-  right: 22%;
-  bottom: -1px;
-  height: 2px;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+/* 进度导轨：随流程推进向下生长 */
+.pipe::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: calc(var(--progress, 0) * 100%);
+  background: linear-gradient(180deg, var(--jade), var(--jade));
+  transition: height 0.62s var(--ease), background 0.4s var(--ease);
+}
+.pipe.blocked::after {
+  background: linear-gradient(180deg, var(--jade) 45%, var(--cinnabar) 100%);
+}
+
+.pipe-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 0.72rem 0;
+  border-bottom: 1px solid var(--line);
+  transition: opacity 0.4s var(--ease);
+}
+.pipe-step:last-child { border-bottom: none; }
+.pipe-step.idle { opacity: 0.42; }
+
+.pipe-node {
+  position: absolute;
+  left: calc(-1.4rem - 4px);
+  top: 1.02rem;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-xs);
+  background: var(--bg-deep);
+  border: 1px solid var(--text-faint);
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.pipe-label {
+  font-size: 0.92rem;
+  color: var(--text-mute);
+  transition: color 0.3s var(--ease);
+}
+.pipe-meta {
+  font-size: 0.74rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 校验中 */
+.pipe-step.run .pipe-node {
   background: var(--brand);
-  box-shadow: 0 0 12px rgba(62, 224, 208, 0.7);
-}
-.card h2 {
-  font-size: 1.12rem;
-  margin-bottom: 0.95rem;
-  color: #fff;
-}
-form { display: flex; flex-direction: column; gap: 0.85rem; }
-label { display: flex; flex-direction: column; gap: 0.35rem; }
-label span { font-size: 0.78rem; color: var(--text-mute); }
-input {
-  height: 44px;
-  padding: 0 0.9rem;
-  border-radius: 10px;
-  background: rgba(4, 8, 14, 0.55);
-  border: 1px solid var(--line);
-  color: #fff;
-  outline: none;
-}
-input:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-soft), var(--glow-cyan);
+  animation: pulse 1.1s var(--ease) infinite;
 }
-.err {
-  font-size: 0.8rem;
-  color: var(--amber);
-  background: var(--amber-soft);
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
+.pipe-step.run .pipe-label { color: var(--text-strong); }
+.pipe-step.run .pipe-meta { color: var(--brand-bright); }
+
+/* 通过 */
+.pipe-step.pass .pipe-node { background: var(--jade); border-color: var(--jade); }
+.pipe-step.pass .pipe-label { color: var(--text); }
+
+/* 拦截 */
+.pipe-step.block .pipe-node {
+  background: var(--cinnabar);
+  border-color: var(--cinnabar);
+  box-shadow: 0 0 0 4px var(--cinnabar-soft);
 }
-.theme-switch {
-  margin-top: 0.95rem;
+.pipe-step.block .pipe-label { color: var(--text-strong); font-weight: 600; }
+.pipe-step.block .pipe-meta { color: var(--cinnabar); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--brand-soft); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+
+/* meta 文案切换 */
+.meta-enter-active, .meta-leave-active { transition: opacity 0.18s var(--ease), transform 0.18s var(--ease); }
+.meta-enter-from { opacity: 0; transform: translateY(-3px); }
+.meta-leave-to { opacity: 0; transform: translateY(3px); }
+
+.aside-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.74rem;
   color: var(--text-faint);
 }
-.theme-switch:hover { color: var(--brand-bright); }
-
-@keyframes drift {
-  from { transform: scale(1.04) translate3d(0, 0, 0); }
-  to { transform: scale(1.08) translate3d(-1.2%, -0.6%, 0); }
+.live {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-xs);
+  background: var(--jade);
+  box-shadow: 0 0 0 3px var(--jade-soft);
 }
 
-@media (max-width: 860px) {
-  .copy { left: 1.2rem; right: 1.2rem; bottom: auto; top: 1.2rem; max-width: none; }
-  .copy h1 { font-size: 1.45rem; }
-  .card {
-    top: auto;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    transform: none;
-    width: 100%;
-    border-radius: 18px 18px 0 0;
+/* ── Right: the auth surface ────────────────────────────────── */
+.pane {
+  display: grid;
+  place-items: center;
+  padding: 2.5rem clamp(1.5rem, 4vw, 4rem);
+  overflow-y: auto;
+  background: var(--bg-void);
+}
+.card {
+  width: 100%;
+  max-width: 384px;
+}
+
+.brand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.brand strong {
+  display: block;
+  font-size: 1.5rem;
+  color: var(--text-strong);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.brand > div > span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--text-mute);
+}
+.theme-switch {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r);
+  color: var(--text-faint);
+  border: 1px solid var(--line);
+}
+.theme-switch:hover { color: var(--brand-bright); border-color: var(--line-bright); }
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 1.5rem;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.tabs button {
+  flex: 1;
+  padding: 0.5rem 0.2rem;
+  font-size: 0.86rem;
+  border-radius: var(--r-sm);
+  color: var(--text-mute);
+  transition: color var(--dur), background var(--dur);
+}
+.tabs button:hover { color: var(--text); }
+.tabs button.on {
+  color: var(--text-strong);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-soft);
+}
+
+form { display: flex; flex-direction: column; gap: 1rem; }
+label { display: flex; flex-direction: column; gap: 0.4rem; }
+label span { font-size: 0.8rem; color: var(--text-mute); font-weight: 500; }
+input {
+  height: 42px;
+  padding: 0 0.85rem;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color var(--dur), box-shadow var(--dur);
+}
+input::placeholder { color: var(--text-faint); }
+input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.err {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--cinnabar);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-sm);
+}
+.err svg { flex: none; }
+
+.fineprint {
+  margin-top: 1.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+@media (max-width: 960px) {
+  .login {
+    position: absolute;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow-y: auto;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .field-photo { animation: none; }
+  .aside {
+    gap: 1.75rem;
+    padding: 2rem 1.5rem 2.25rem;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .copy h1 { font-size: 1.6rem; }
+  .pipe { display: none; }
+  .pane { padding: 2rem 1.5rem 3rem; place-items: start center; }
 }
 </style>

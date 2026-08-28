@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore, useWorkspaceStore } from '@/stores/workspace'
 import TechIcon from '@/components/TechIcon.vue'
+import BrandLogo from '@/components/BrandLogo.vue'
 import { STATUS_LABEL } from '@/lib/labels'
 import { useTheme } from '@/composables/useTheme'
 
@@ -116,7 +117,7 @@ onBeforeUnmount(() => {
     <div v-if="mobileOpen" class="scrim" @click="mobileOpen = false"></div>
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true"><TechIcon name="shield" :size="18" /></div>
+        <div class="brand-mark" aria-hidden="true"><BrandLogo :size="26" /></div>
         <div class="brand-text">
           <strong>ChangeGuard</strong>
           <span>变更风险治理</span>

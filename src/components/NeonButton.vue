@@ -38,10 +38,10 @@ withDefaults(defineProps<{
 .nb-primary {
   background: var(--primary-grad);
   color: var(--text-inverse);
-  border: 1px solid rgba(122, 240, 228, 0.35);
-  box-shadow: var(--glow-cyan);
+  border: 1px solid var(--brand-deep);
+  box-shadow: var(--shadow-soft);
 }
-.nb-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.nb-primary:hover:not(:disabled) { background: var(--brand-deep); }
 
 .nb-ghost {
   background: transparent;

@@ -1,6 +1,9 @@
 /* ============================================================
-   ChangeGuard · Immersive Deck
-   Near-black void. Cyan light. Glass. Live constellation.
+   ChangeGuard · Enterprise Console Design System
+   Precision over spectacle. Structure, hierarchy, restraint.
+
+   Tech feel comes from tabular data, monospaced identifiers,
+   hairline rules and a disciplined 4px rhythm — not from glow.
    ============================================================ */
 
 @font-face {
@@ -36,30 +39,33 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* ── Dark: engineered graphite, cool neutral, blue signal ───── */
 :root {
-  --bg-void: #05070c;
-  --bg-deep: #070b12;
-  --bg-base: #0a1018;
-  --bg-elev: #0d141f;
-  --bg-glass: rgba(10, 16, 26, 0.62);
-  --bg-glass-strong: rgba(12, 18, 30, 0.82);
-  --surface: #0e1622;
-  --surface-2: #141e2c;
-  --bg-aurora-1: #061018;
-  --bg-aurora-2: #05070c;
-  --bg-aurora-3: #05070c;
+  --bg-void: #0a0d13;
+  --bg-deep: #0d1119;
+  --bg-base: #11161f;
+  --bg-elev: #151b25;
+  --bg-glass: rgba(17, 22, 31, 0.72);
+  --bg-glass-strong: rgba(21, 27, 37, 0.88);
+  --surface: #131922;
+  --surface-2: #1a212c;
+  --bg-aurora-1: #0d1119;
+  --bg-aurora-2: #0a0d13;
+  --bg-aurora-3: #0a0d13;
 
-  --text: #d7e6ee;
-  --text-strong: #f3fbff;
-  --text-mute: #8aa0b0;
-  --text-faint: #6a7e8e;
-  --text-inverse: #041016;
+  --text: #c8d2df;
+  --text-strong: #f1f5fa;
+  --text-mute: #8593a5;
+  --text-faint: #626f80;
+  --text-inverse: #ffffff;
 
-  --brand: #3ee0d0;
-  --brand-bright: #7af0e4;
-  --brand-deep: #1aa89a;
-  --brand-soft: rgba(62, 224, 208, 0.14);
+  /* Signal blue: legible on graphite, unmistakably enterprise */
+  --brand: #4d8bff;
+  --brand-bright: #7aa9ff;
+  --brand-deep: #2f6fe0;
+  --brand-soft: rgba(77, 139, 255, 0.13);
 
+  /* Legacy aliases — kept so components keep resolving */
   --gold: var(--brand);
   --gold-bright: var(--brand-bright);
   --gold-deep: var(--brand-deep);
@@ -71,44 +77,45 @@
   --cyan: var(--brand);
   --cyan-bright: var(--brand-bright);
   --cyan-soft: var(--brand-soft);
-  --blue: #5b9bff;
-  --blue-bright: #8bb6ff;
-  --blue-soft: rgba(91, 155, 255, 0.14);
+  --blue: var(--brand);
+  --blue-bright: var(--brand-bright);
+  --blue-soft: var(--brand-soft);
   --primary: var(--brand);
-  --primary-grad: linear-gradient(180deg, #7af0e4 0%, #1aa89a 100%);
-  --primary-grad-soft: linear-gradient(180deg, rgba(62, 224, 208, 0.16), rgba(26, 168, 154, 0.06));
+  --primary-grad: linear-gradient(180deg, #5c95ff 0%, #3b7bf0 100%);
+  --primary-grad-soft: linear-gradient(180deg, rgba(77, 139, 255, 0.14), rgba(47, 111, 224, 0.05));
 
-  --cinnabar: #ff5d6c;
-  --cinnabar-soft: rgba(255, 93, 108, 0.14);
-  --amber: #f0b429;
-  --amber-soft: rgba(240, 180, 41, 0.14);
-  --red: #ff5d6c;
-  --red-bright: #ff8a94;
-  --red-soft: rgba(255, 93, 108, 0.14);
-  --jade: #3dd68c;
-  --jade-bright: #6ee7b0;
-  --jade-soft: rgba(61, 214, 140, 0.14);
+  --cinnabar: #f2545b;
+  --cinnabar-soft: rgba(242, 84, 91, 0.13);
+  --amber: #e0a028;
+  --amber-soft: rgba(224, 160, 40, 0.13);
+  --red: #f2545b;
+  --red-bright: #ff8086;
+  --red-soft: rgba(242, 84, 91, 0.13);
+  --jade: #2fb87a;
+  --jade-bright: #4fd396;
+  --jade-soft: rgba(47, 184, 122, 0.13);
   --green: var(--jade);
   --green-bright: var(--jade-bright);
   --green-soft: var(--jade-soft);
-  --purple: #6a7e8e;
-  --purple-soft: rgba(106, 126, 142, 0.14);
+  --purple: #8b93a5;
+  --purple-soft: rgba(139, 147, 165, 0.13);
 
-  --risk-high: #ff5d6c;
-  --risk-medium: #f0b429;
-  --risk-low: #3ee0d0;
-  --risk-unknown: #6a7e8e;
+  --risk-high: #f2545b;
+  --risk-medium: #e0a028;
+  --risk-low: #4d8bff;
+  --risk-unknown: #626f80;
 
-  --line: rgba(180, 220, 230, 0.10);
-  --line-bright: rgba(62, 224, 208, 0.42);
-  --line-strong: rgba(180, 220, 230, 0.18);
-  --neon-edge: 1px solid var(--line-bright);
+  --line: rgba(190, 208, 230, 0.10);
+  --line-bright: rgba(77, 139, 255, 0.38);
+  --line-strong: rgba(190, 208, 230, 0.18);
+  --neon-edge: 1px solid var(--line-strong);
 
+  /* Tightened: precision reads as engineering, softness reads as consumer */
   --r-xs: 2px;
-  --r-sm: 6px;
-  --r: 10px;
-  --r-lg: 14px;
-  --r-xl: 18px;
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 8px;
+  --r-xl: 12px;
   --r-pill: 999px;
 
   --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
@@ -117,13 +124,14 @@
   --font-latin: var(--font-brand);
   --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Consolas", monospace;
 
-  --glow-cyan: 0 0 28px rgba(62, 224, 208, 0.28);
-  --glow-blue: 0 0 22px rgba(91, 155, 255, 0.22);
-  --glow-red: 0 0 18px rgba(255, 93, 108, 0.22);
-  --shadow-panel: 0 24px 64px rgba(0, 0, 0, 0.45);
-  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.32);
-  --shadow-pop: 0 28px 80px rgba(0, 0, 0, 0.55);
-  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
+  /* Glow retired in favour of elevation. Names kept, weight removed. */
+  --glow-cyan: none;
+  --glow-blue: none;
+  --glow-red: none;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-pop: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.22);
 
   --glass: var(--bg-glass);
   --glass-hi: var(--bg-glass-strong);
@@ -131,12 +139,15 @@
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: var(--ease);
-  --dur-fast: 0.16s;
-  --dur: 0.28s;
-  --dur-slow: 0.55s;
+  --dur-fast: 0.12s;
+  --dur: 0.18s;
+  --dur-slow: 0.32s;
 
   --sidebar: 236px;
   --topbar: 58px;
+
+  /* Hairline grid used for surface texture at very low contrast */
+  --grid-line: rgba(190, 208, 230, 0.038);
 
   color-scheme: dark;
   color: var(--text);
@@ -146,41 +157,59 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Light: designed as a peer of dark, not a fallback ─────── */
 :root[data-theme="light"] {
-  --bg-void: #eef3f6;
-  --bg-deep: #e2eaef;
+  --bg-void: #f4f6f9;
+  --bg-deep: #eef1f5;
   --bg-base: #ffffff;
   --bg-elev: #ffffff;
-  --bg-glass: rgba(255, 255, 255, 0.78);
-  --bg-glass-strong: rgba(255, 255, 255, 0.92);
+  --bg-glass: rgba(255, 255, 255, 0.86);
+  --bg-glass-strong: rgba(255, 255, 255, 0.96);
   --surface: #ffffff;
-  --surface-2: #f3f7f9;
-  --text: #1a2a32;
-  --text-strong: #0b161c;
-  --text-mute: #4d6270;
-  --text-faint: #6d8290;
-  --text-inverse: #041016;
-  --brand: #0f8a7e;
-  --brand-bright: #0b6b62;
-  --brand-deep: #0a5a53;
-  --brand-soft: rgba(15, 138, 126, 0.12);
-  --gold: var(--brand);
-  --gold-bright: var(--brand-bright);
-  --gold-deep: var(--brand-deep);
-  --gold-soft: var(--brand-soft);
-  --ice: var(--brand);
-  --ice-bright: var(--brand-bright);
-  --cyan: var(--brand);
-  --cyan-bright: var(--brand-bright);
-  --primary: var(--brand);
-  --cinnabar: #c44550;
-  --red: #c44550;
-  --red-bright: #a8333d;
-  --amber: #b07d22;
-  --jade: #1b8f62;
-  --line: rgba(15, 36, 48, 0.10);
-  --line-bright: rgba(15, 138, 126, 0.36);
-  --glow-cyan: none;
-  --shadow-panel: 0 16px 40px rgba(15, 36, 48, 0.08);
+  --surface-2: #f5f7fa;
+
+  --text: #2b3542;
+  --text-strong: #101720;
+  --text-mute: #5c6b7c;
+  --text-faint: #8593a5;
+  --text-inverse: #ffffff;
+
+  --brand: #1f5fd0;
+  --brand-bright: #1a4fb0;
+  --brand-deep: #163f8c;
+  --brand-soft: rgba(31, 95, 208, 0.09);
+
+  --primary-grad: linear-gradient(180deg, #2a6ade 0%, #1f5fd0 100%);
+  --primary-grad-soft: linear-gradient(180deg, rgba(31, 95, 208, 0.10), rgba(31, 95, 208, 0.03));
+
+  --cinnabar: #c4353f;
+  --cinnabar-soft: rgba(196, 53, 63, 0.09);
+  --red: #c4353f;
+  --red-bright: #a82831;
+  --red-soft: rgba(196, 53, 63, 0.09);
+  --amber: #9a6b12;
+  --amber-soft: rgba(154, 107, 18, 0.10);
+  --jade: #17805a;
+  --jade-bright: #12694a;
+  --jade-soft: rgba(23, 128, 90, 0.09);
+  --purple: #5c6b7c;
+  --purple-soft: rgba(92, 107, 124, 0.09);
+
+  --risk-high: #c4353f;
+  --risk-medium: #9a6b12;
+  --risk-low: #1f5fd0;
+  --risk-unknown: #8593a5;
+
+  --line: rgba(19, 38, 62, 0.11);
+  --line-bright: rgba(31, 95, 208, 0.34);
+  --line-strong: rgba(19, 38, 62, 0.19);
+
+  --shadow-panel: 0 1px 2px rgba(19, 38, 62, 0.06), 0 8px 24px rgba(19, 38, 62, 0.05);
+  --shadow-card: 0 1px 2px rgba(19, 38, 62, 0.07);
+  --shadow-pop: 0 8px 32px rgba(19, 38, 62, 0.12), 0 2px 6px rgba(19, 38, 62, 0.06);
+  --shadow-soft: 0 1px 2px rgba(19, 38, 62, 0.05);
+
+  --grid-line: rgba(19, 38, 62, 0.032);
+
   color-scheme: light;
 }

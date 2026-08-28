@@ -23,5 +23,13 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5173, host: true },
+  server: {
+    port: 5173,
+    host: true,
+    // 本地开发时把 /api 转发到真实后端，通过 CG_API 指定，例如：
+    //   CG_API=https://liufengxi.top npm run dev
+    proxy: process.env.CG_API
+      ? { '/api': { target: process.env.CG_API, changeOrigin: true, secure: true } }
+      : undefined,
+  },
 })
