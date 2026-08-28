@@ -83,9 +83,9 @@ async function refresh() {
 
 <style scoped>
 @import './page.css';
-.load-error { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .9rem; margin-bottom: .75rem; border: 1px solid rgba(255,90,112,.35); border-radius: var(--r); background: var(--red-soft); }
+.load-error { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .9rem; margin-bottom: .75rem; border: 1px solid color-mix(in srgb, var(--cinnabar) 35%, transparent); border-radius: var(--r); background: var(--cinnabar-soft); }
 .load-error > div { display: grid; gap: .18rem; }
-.load-error strong { color: var(--red-bright); font-size: .86rem; }
+.load-error strong { color: var(--cinnabar); font-size: .86rem; }
 .load-error span { color: var(--text-mute); font-size: .78rem; }
 .meta-cell { display: flex; flex-direction: column; gap: 1px; line-height: var(--lh-snug); }
 .meta-cell .owner { font-size: var(--fs-13); color: var(--text); }

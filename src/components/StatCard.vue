@@ -36,43 +36,45 @@ watch(() => props.value, animate)
 <template>
   <div class="stat" :class="`stat-${tone}`">
     <div class="stat-inner">
-      <div class="stat-val mono">
+      <div class="stat-label kicker">{{ label }}</div>
+      <div class="stat-val">
         <span class="stat-num">{{ display.toLocaleString() }}</span>
         <span class="stat-suffix" v-if="suffix">{{ suffix }}</span>
       </div>
-      <div class="stat-label">{{ label }}</div>
     </div>
-    <div class="stat-bar" aria-hidden="true"></div>
   </div>
 </template>
 
 <style scoped>
+/* 参考台账的指标卡：kicker 标签在上，24px 实数值在下，无底色条 */
 .stat {
   position: relative;
-  padding: 1.15rem 1.3rem;
+  padding: 16px;
   border-radius: var(--r-lg);
   background: var(--surface);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: border-color var(--dur);
 }
-.stat:hover { border-color: var(--line-bright); }
+:root[data-theme="light"] .stat {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card);
+}
 .stat-inner { position: relative; z-index: 2; }
-.stat-val { display: flex; align-items: baseline; gap: 0.22rem; font-weight: 500; line-height: 1; }
+.stat-label { display: block; margin-bottom: 10px; }
+.stat-val { display: flex; align-items: baseline; gap: 0.22rem; line-height: var(--lh-tight); }
 .stat-num {
-  font-size: 2.2rem;
-  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  font-family: var(--font-sans);
   color: var(--text-strong);
-  letter-spacing: -0.02em;
-  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
 }
-.stat-suffix { font-size: 0.9rem; color: var(--text-mute); }
-.stat-label { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-mute); letter-spacing: 0; }
-.stat-bar { position: absolute; left: 0; bottom: 0; height: 1px; width: 100%; background: currentColor; opacity: 0.55; }
-.stat-gold, .stat-cyan { color: var(--gold); }
-.stat-blue { color: var(--text-mute); }
-.stat-purple { color: var(--text-mute); }
-.stat-amber { color: var(--amber); }
-.stat-red { color: var(--cinnabar); }
-.stat-green { color: var(--jade); }
+.stat-suffix { font-size: var(--fs-12); color: var(--text-mute); }
+.stat-gold .stat-num, .stat-cyan .stat-num { color: var(--brand); }
+.stat-blue .stat-num { color: var(--text-strong); }
+.stat-purple .stat-num { color: var(--text-strong); }
+.stat-amber .stat-num { color: var(--amber); }
+.stat-red .stat-num { color: var(--cinnabar); }
+.stat-green .stat-num { color: var(--jade); }
 </style>

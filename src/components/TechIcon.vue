@@ -58,5 +58,6 @@ const icons: Record<string, string> = {
 
 <style scoped>
 .tech-icon { display: inline-block; vertical-align: middle; flex: none; }
-.tech-icon.glow { filter: drop-shadow(0 0 5px currentColor); }
+/* glow 已从设计系统退役：prop 保留兼容，视觉权重归零 */
+.tech-icon.glow { filter: none; }
 </style>

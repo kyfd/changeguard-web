@@ -309,7 +309,7 @@ const findingState: Record<string, [string, string]> = {
 }
 .passport em { font-size: var(--fs-11); letter-spacing: 0.08em; }
 .passport span { font-size: var(--fs-13); color: var(--text-mute); }
-.passport li.done { border-color: rgba(198,163,106,.28); }
+.passport li.done { border-color: color-mix(in srgb, var(--brand) 32%, transparent); }
 .passport li.done span { color: var(--text); }
 .passport li.on { border-color: var(--gold); background: var(--gold-soft); }
 .passport li.on span { color: var(--text-strong); font-weight: 600; }
@@ -321,13 +321,13 @@ const findingState: Record<string, [string, string]> = {
 .dpanel-head h3 svg { color: var(--gold-bright); }
 .dpanel-head > span { font-size: var(--fs-12); color: var(--text-faint); }
 .status-strip { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
-.status-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .7rem; border-radius: var(--r-pill); background: var(--bg-glass); border: 1px solid var(--line); font-size: var(--fs-13); color: var(--text-mute); }
+.status-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .7rem; border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--line); font-size: var(--fs-13); color: var(--text-mute); }
 .dpanel-desc { font-size: var(--fs-14); color: var(--text-mute); line-height: 1.6; margin-bottom: .8rem; }
 .sql-block { margin-top: .7rem; }
 .sql-block strong { display: block; font-size: var(--fs-12); color: var(--text-faint); margin-bottom: .35rem; letter-spacing: .06em; }
 .sql-block pre { margin: 0; padding: .7rem .85rem; border-radius: var(--r-sm); background: var(--bg-deep); border: 1px solid var(--line); font-size: var(--fs-12); color: var(--gold-bright); overflow-x: auto; }
 .finding-list { display: grid; gap: .6rem; }
-.finding-card { display: grid; grid-template-columns: 34px 1fr; gap: .7rem; padding: .8rem .9rem; border-radius: var(--r); background: var(--bg-glass); border: 1px solid var(--line); }
+.finding-card { display: grid; grid-template-columns: 34px 1fr; gap: .7rem; padding: .8rem .9rem; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); }
 .finding-level { height: 26px; border-radius: var(--r-sm); display: grid; place-items: center; font-size: var(--fs-12); font-weight: 700; }
 .finding-level.high { background: var(--red-soft); color: var(--red-bright); }
 .finding-level.medium { background: var(--amber-soft); color: var(--amber); }
@@ -338,13 +338,13 @@ const findingState: Record<string, [string, string]> = {
 .finding-suggestion { margin-top: .4rem; font-size: var(--fs-13); color: var(--green-bright); }
 .finding-ownership { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .5rem; font-size: var(--fs-12); color: var(--text-faint); }
 .finding-ownership b { color: var(--text-mute); margin-right: .2rem; }
-.finding-state { font-size: var(--fs-11); padding: .15em .55em; border-radius: var(--r-pill); }
+.finding-state { font-size: var(--fs-11); padding: .15em .55em; border-radius: var(--r-sm); }
 .finding-state-open { background: var(--red-soft); color: var(--red-bright); }
 .finding-state-assigned { background: var(--amber-soft); color: var(--amber); }
 .finding-state-resolved { background: var(--blue-soft); color: var(--blue-bright); }
 .finding-state-verified { background: var(--green-soft); color: var(--green-bright); }
 .finding-title-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
-.blocking-tag { padding: .1em .5em; border-radius: var(--r-pill); background: var(--red); color: #fff; font-size: var(--fs-11); }
+.blocking-tag { padding: .1em .5em; border-radius: var(--r-sm); background: var(--cinnabar); color: #fff; font-size: var(--fs-11); }
 /* 裁决条：把"能不能上生产"这个结论提到首屏，不必滚到证据列表末尾 */
 .verdict {
   display: flex; align-items: center; gap: .7rem;
@@ -353,7 +353,7 @@ const findingState: Record<string, [string, string]> = {
   border-left: 3px solid var(--line-bright);
 }
 .verdict.blocked { border-left-color: var(--red); background: var(--red-soft); }
-.verdict.clear { border-left-color: var(--green, #3fb950); }
+.verdict.clear { border-left-color: var(--jade); }
 .verdict-main { display: grid; gap: .16rem; }
 .verdict-main strong { font-size: var(--fs-16); color: var(--text-strong); font-weight: 600; }
 .verdict.blocked .verdict-main strong { color: var(--red-bright); }
@@ -368,7 +368,7 @@ const findingState: Record<string, [string, string]> = {
 .comment-meta strong { font-size: var(--fs-13); color: var(--text-strong); }
 .comment-meta span { font-size: var(--fs-12); color: var(--text-faint); }
 .agent-qa-q p { font-size: var(--fs-13); color: var(--text); margin-top: .2rem; }
-.agent-qa-a { margin-left: 2.6rem; padding: .75rem .85rem; border-radius: var(--r); background: var(--bg-glass); border: 1px solid var(--line); }
+.agent-qa-a { margin-left: 2.6rem; padding: .75rem .85rem; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); }
 .agent-qa-a-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .4rem; }
 .agent-qa-a-head strong { font-size: var(--fs-13); color: var(--gold-bright); }
 .agent-qa-a-head span { font-size: var(--fs-12); color: var(--text-faint); }
@@ -386,14 +386,14 @@ const findingState: Record<string, [string, string]> = {
 .agent-citation code { max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-faint); font-size: var(--fs-11); }
 .agent-tool-log { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
 .agent-tool-log code { font-size: var(--fs-11); padding: .15em .5em; border-radius: var(--r-sm); background: var(--bg-deep); border: 1px solid var(--line); color: var(--blue-bright); overflow-wrap: anywhere; }
-.agent-tool-log code.tool-error { color: var(--red-bright); border-color: rgba(255,90,112,.35); background: var(--red-soft); }
+.agent-tool-log code.tool-error { color: var(--cinnabar); border-color: color-mix(in srgb, var(--cinnabar) 35%, transparent); background: var(--cinnabar-soft); }
 .agent-proposals { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .55rem; }
-.proposal-chip { font-size: var(--fs-12); padding: .2em .6em; border-radius: var(--r-pill); background: var(--green-soft); color: var(--green-bright); border: 1px solid rgba(16,185,129,.3); }
+.proposal-chip { font-size: var(--fs-12); padding: .2em .6em; border-radius: var(--r-sm); background: var(--jade-soft); color: var(--jade); border: 1px solid var(--line); }
 .agent-qa-form { display: grid; gap: .6rem; margin-top: .9rem; }
-.agent-qa-form textarea { width: 100%; min-height: 76px; padding: .65rem .8rem; border-radius: var(--r); background: var(--bg-glass); border: 1px solid var(--line); color: var(--text); font-size: var(--fs-13); outline: none; resize: vertical; font-family: inherit; }
-.agent-qa-form textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.agent-qa-form textarea { width: 100%; min-height: 76px; padding: .65rem .8rem; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text-strong); font-size: var(--fs-13); outline: none; resize: vertical; font-family: inherit; }
+.agent-qa-form textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); background: var(--surface); }
 .agent-qa-suggestions { display: flex; flex-wrap: wrap; gap: .4rem; }
-.chip { font-size: var(--fs-12); padding: .28em .7em; border-radius: var(--r-pill); background: var(--bg-glass); border: 1px solid var(--line); color: var(--text-mute); transition: all var(--dur); }
+.chip { font-size: var(--fs-12); padding: .28em .7em; border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--line); color: var(--text-mute); transition: all var(--dur); }
 .chip:hover:not(:disabled) { color: var(--gold-bright); border-color: var(--line-bright); }
 .chip:disabled { opacity: .5; cursor: not-allowed; }
 .agent-qa-foot { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }

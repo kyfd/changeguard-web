@@ -130,12 +130,15 @@ async function submit() {
     <section class="aside">
       <div class="aside-grid" aria-hidden="true"></div>
       <div class="aside-wash" aria-hidden="true"></div>
+      <span class="cross" style="left: 12%; top: 18%" aria-hidden="true"></span>
+      <span class="cross" style="left: 64%; top: 64%" aria-hidden="true"></span>
+      <span class="cross" style="left: 38%; top: 86%" aria-hidden="true"></span>
 
       <header class="lockup">
-        <span class="mark"><BrandLogo :size="26" :variant="blocked ? 'blocked' : 'default'" /></span>
+        <span class="mark"><BrandLogo :size="20" :variant="blocked ? 'blocked' : 'default'" /></span>
         <strong>ChangeGuard</strong>
         <span class="lockup-sep" aria-hidden="true"></span>
-        <span class="lockup-sub mono">CHANGE RISK CONTROL</span>
+        <span class="kicker">CHANGE RISK CONTROL</span>
       </header>
 
       <div class="copy">
@@ -163,6 +166,7 @@ async function submit() {
           <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '治理引擎在线' }}</span>
         </transition>
       </footer>
+      <span class="stamp mono">GATE&nbsp;CONSOLE&nbsp;·&nbsp;V2.4</span>
     </section>
 
     <section class="pane">
@@ -233,8 +237,11 @@ async function submit() {
   padding: 3rem clamp(2rem, 5vw, 5rem);
   min-width: 0;
   overflow: hidden;
-  background: var(--bg-deep);
+  background: var(--bg-base);
   border-right: 1px solid var(--line);
+}
+:root[data-theme="light"] .aside {
+  background: linear-gradient(155deg, #fbfbfe 0%, var(--bg-base) 46%, var(--bg-base) 100%);
 }
 .aside-grid {
   position: absolute;
@@ -243,15 +250,19 @@ async function submit() {
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: radial-gradient(120% 90% at 30% 40%, #000 35%, transparent 100%);
-  -webkit-mask-image: radial-gradient(120% 90% at 30% 40%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(120% 90% at 30% 40%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(120% 90% at 30% 40%, #000 30%, transparent 100%);
 }
 .aside-wash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(90% 70% at 18% 30%, var(--brand-soft) 0%, transparent 60%);
   pointer-events: none;
+  background: radial-gradient(720px 480px at 16% 22%, var(--brand-soft) 0%, transparent 62%);
 }
+.cross { position: absolute; width: 13px; height: 13px; opacity: 0.9; }
+.cross::before, .cross::after { content: ""; position: absolute; background: var(--line-strong); }
+.cross::before { left: 6px; top: 0; width: 1px; height: 13px; }
+.cross::after { left: 0; top: 6px; width: 13px; height: 1px; }
 
 .lockup {
   position: relative;
@@ -261,13 +272,13 @@ async function submit() {
   flex-wrap: wrap;
 }
 .mark {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   flex: none;
   display: grid;
   place-items: center;
   border-radius: var(--r-lg);
-  color: var(--brand-bright);
+  color: var(--brand);
   background: var(--brand-soft);
   border: 1px solid var(--line-bright);
 }
@@ -282,17 +293,12 @@ async function submit() {
   height: 14px;
   background: var(--line-strong);
 }
-.lockup-sub {
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  color: var(--text-faint);
-}
 
 .copy { position: relative; max-width: 32rem; }
 .copy h1 {
-  font-size: clamp(2.1rem, 3.6vw, 3.2rem);
+  font-size: clamp(2.4rem, 3.9vw, 3.5rem);
   font-weight: 650;
-  line-height: 1.18;
+  line-height: 1.22;
   letter-spacing: -0.02em;
   color: var(--text-strong);
 }
@@ -311,20 +317,22 @@ async function submit() {
   content: "";
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 1px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
   background: var(--line);
+  border-radius: 1px;
 }
 /* 进度导轨：随流程推进向下生长 */
 .pipe::after {
   content: "";
   position: absolute;
   left: 0;
-  top: 0;
-  width: 1px;
-  height: calc(var(--progress, 0) * 100%);
-  background: linear-gradient(180deg, var(--jade), var(--jade));
+  top: 6px;
+  width: 2px;
+  border-radius: 1px;
+  height: calc(var(--progress, 0) * (100% - 12px));
+  background: var(--jade);
   transition: height 0.62s var(--ease), background 0.4s var(--ease);
 }
 .pipe.blocked::after {
@@ -342,16 +350,16 @@ async function submit() {
   transition: opacity 0.4s var(--ease);
 }
 .pipe-step:last-child { border-bottom: none; }
-.pipe-step.idle { opacity: 0.42; }
+.pipe-step.idle { opacity: 0.4; }
 
 .pipe-node {
   position: absolute;
   left: calc(-1.4rem - 4px);
   top: 1.02rem;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--r-xs);
-  background: var(--bg-deep);
+  background: var(--bg-base);
   border: 1px solid var(--text-faint);
   transition: background 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
@@ -413,6 +421,19 @@ async function submit() {
   background: var(--jade);
   box-shadow: 0 0 0 3px var(--jade-soft);
 }
+.aside-foot.halted .live {
+  background: var(--cinnabar);
+  box-shadow: 0 0 0 3px var(--cinnabar-soft);
+}
+.stamp {
+  position: absolute;
+  right: clamp(2rem, 5vw, 5rem);
+  bottom: 1.6rem;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  opacity: 0.8;
+}
 
 /* ── Right: the auth surface ────────────────────────────────── */
 .pane {
@@ -424,7 +445,15 @@ async function submit() {
 }
 .card {
   width: 100%;
-  max-width: 384px;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-panel);
+  padding: 32px;
+}
+:root[data-theme="light"] .card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-panel);
 }
 
 .brand {
@@ -473,34 +502,37 @@ async function submit() {
   padding: 0.5rem 0.2rem;
   font-size: 0.86rem;
   border-radius: var(--r-sm);
+  border: 1px solid transparent;
   color: var(--text-mute);
-  transition: color var(--dur), background var(--dur);
+  transition: color var(--dur), background var(--dur), box-shadow var(--dur);
 }
 .tabs button:hover { color: var(--text); }
 .tabs button.on {
   color: var(--text-strong);
-  background: var(--bg-elev);
+  background: var(--surface);
+  border-color: var(--line);
   box-shadow: var(--shadow-soft);
 }
 
 form { display: flex; flex-direction: column; gap: 1rem; }
 label { display: flex; flex-direction: column; gap: 0.4rem; }
-label span { font-size: 0.8rem; color: var(--text-mute); font-weight: 500; }
+label span { font-size: 13px; color: var(--text-mute); font-weight: 500; }
 input {
-  height: 42px;
+  height: 44px;
   padding: 0 0.85rem;
   border-radius: var(--r);
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--line-strong);
   color: var(--text-strong);
   font-size: 0.92rem;
   outline: none;
-  transition: border-color var(--dur), box-shadow var(--dur);
+  transition: border-color var(--dur), box-shadow var(--dur), background var(--dur);
 }
 input::placeholder { color: var(--text-faint); }
 input:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--brand-soft);
+  background: var(--surface);
 }
 
 .err {

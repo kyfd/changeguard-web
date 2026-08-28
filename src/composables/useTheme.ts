@@ -2,12 +2,12 @@ import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 
 export type ThemePref = 'dark' | 'light' | 'system'
 const KEY = 'changeguard-theme'
-const pref = ref<ThemePref>('dark')
-const resolved = ref<'dark' | 'light'>('dark')
+const pref = ref<ThemePref>('light')
+const resolved = ref<'dark' | 'light'>('light')
 
 function readPref(): ThemePref {
   const v = localStorage.getItem(KEY)
-  return v === 'light' || v === 'system' || v === 'dark' ? v : 'dark'
+  return v === 'light' || v === 'system' || v === 'dark' ? v : 'light'
 }
 
 function resolve(p: ThemePref): 'dark' | 'light' {
@@ -25,7 +25,7 @@ function paint(p: ThemePref) {
   root.setAttribute('data-theme', next)
   root.style.colorScheme = next
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', next === 'light' ? '#f4f6f9' : '#0a0d13')
+  if (meta) meta.setAttribute('content', next === 'light' ? '#f6f7f9' : '#14161c')
   const scheme = document.querySelector('meta[name="color-scheme"]')
   if (scheme) scheme.setAttribute('content', next)
 }

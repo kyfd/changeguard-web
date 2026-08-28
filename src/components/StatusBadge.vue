@@ -32,24 +32,28 @@ function tone(v: string): { c: string; label: string } {
 </template>
 
 <style scoped>
-.badge { display: inline-flex; align-items: center; gap: var(--sp-1); border-radius: var(--r-sm); white-space: nowrap; line-height: 1; letter-spacing: 0; font-weight: var(--fw-medium); }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px;
+  border-radius: var(--r-sm); border: 1px solid var(--line);
+  white-space: nowrap; line-height: 1.3; letter-spacing: 0; font-weight: var(--fw-medium);
+}
 /* 固定高度：徽章在表格单元格里必须与同行文本基线稳定对齐 */
-.badge-sm { height: 20px; font-size: var(--fs-11); padding: 0 var(--sp-2); }
-.badge-md { height: 24px; font-size: var(--fs-12); padding: 0 var(--sp-2); }
-.badge-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.badge-sm { height: 20px; font-size: var(--fs-11); }
+.badge-md { height: 24px; font-size: var(--fs-12); }
+.badge-dot { width: 6px; height: 6px; border-radius: var(--r-xs); flex: none; }
 
-.badge-ok { color: var(--jade-bright); background: var(--jade-soft); border: 1px solid rgba(111,155,122,.28); }
+.badge-ok { color: var(--jade); background: var(--jade-soft); }
 .badge-ok .badge-dot { background: var(--jade); }
-.badge-warn { color: var(--amber); background: var(--amber-soft); border: 1px solid rgba(201,161,91,.3); }
+.badge-warn { color: var(--amber); background: var(--amber-soft); }
 .badge-warn .badge-dot { background: var(--amber); }
-.badge-err { color: var(--red-bright); background: var(--red-soft); border: 1px solid rgba(196,92,74,.3); }
+.badge-err { color: var(--cinnabar); background: var(--cinnabar-soft); }
 .badge-err .badge-dot { background: var(--cinnabar); }
-.badge-high { color: var(--red-bright); background: var(--red-soft); border: 1px solid rgba(196,92,74,.32); }
+.badge-high { color: var(--cinnabar); background: var(--cinnabar-soft); }
 .badge-high .badge-dot { background: var(--cinnabar); }
-.badge-medium { color: var(--amber); background: var(--amber-soft); border: 1px solid rgba(201,161,91,.32); }
+.badge-medium { color: var(--amber); background: var(--amber-soft); }
 .badge-medium .badge-dot { background: var(--amber); }
-.badge-low { color: var(--jade-bright); background: var(--jade-soft); border: 1px solid rgba(111,155,122,.28); }
-.badge-low .badge-dot { background: var(--jade); }
-.badge-unknown, .badge-info { color: var(--text-mute); background: rgba(110,105,96,.12); border: 1px solid var(--line); }
+.badge-low { color: var(--brand-bright); background: var(--brand-soft); }
+.badge-low .badge-dot { background: var(--brand); }
+.badge-unknown, .badge-info { color: var(--text-mute); background: var(--surface-2); }
 .badge-unknown .badge-dot, .badge-info .badge-dot { background: var(--text-faint); }
 </style>

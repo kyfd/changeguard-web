@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0a0d13" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f6f7f9" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>ChangeGuard · 企业变更风险治理</title>
     <script>
       (function () {
         try {
-          var p = localStorage.getItem('changeguard-theme') || 'dark'
+          var p = localStorage.getItem('changeguard-theme') || 'light'
           var r = p === 'system'
             ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
             : p
-          if (r !== 'light') r = 'dark'
+          if (r !== 'dark') r = 'light'
           document.documentElement.setAttribute('data-theme', r)
           document.documentElement.style.colorScheme = r
         } catch (e) {}

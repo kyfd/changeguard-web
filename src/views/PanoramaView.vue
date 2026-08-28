@@ -132,8 +132,6 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
 
 <template>
   <section class="deck">
-    <div class="field" aria-hidden="true"></div>
-    <div class="veil" aria-hidden="true"></div>
     <ChangeLattice
       expand
       interactive
@@ -232,45 +230,7 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
   color: var(--text);
   background: var(--bg-void);
 }
-/* 大屏底纹用 hairline 网格而非照片：照片高光会吞掉节点标签，
-   且画面主体应当是数据本身，不是素材。 */
-.field {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 44px,
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 44px 100%;
-  mask-image: radial-gradient(120% 100% at 50% 50%, #000 35%, transparent 88%);
-  -webkit-mask-image: radial-gradient(120% 100% at 50% 50%, #000 35%, transparent 88%);
-}
-/* 中心微亮，让视线落在图谱上；四角压暗收边 */
-.veil {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(58% 52% at 50% 50%, color-mix(in srgb, var(--brand) 7%, transparent), transparent 72%),
-    radial-gradient(120% 90% at 50% 50%, transparent 55%, var(--bg-void) 100%);
-}
-/* 缓慢扫描带：大屏值守的时间感，不参与信息表达故极低对比 */
-.veil::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 42%,
-    color-mix(in srgb, var(--brand) 9%, transparent) 50%,
-    transparent 58%
-  );
-  animation: sweep 9s linear infinite;
-}
-@keyframes sweep {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .veil::after { animation: none; opacity: 0; }
-}
+/* 背景保持素平：数据与 hairline 结构是全部画面，无底纹无光晕 */
 
 .hud {
   position: absolute;
@@ -299,12 +259,13 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
   height: 28px;
   padding: 0 var(--sp-3);
   border-radius: var(--r);
-  border: 1px solid var(--line);
-  color: var(--brand-bright);
+  border: 1px solid var(--line-strong);
+  color: var(--text-strong);
   font-size: var(--fs-12);
+  font-weight: var(--fw-medium);
   background: var(--surface);
 }
-.exit:hover { border-color: var(--line-bright); }
+.exit:hover { background: var(--bg-elev); }
 
 .stats {
   position: absolute;
@@ -314,30 +275,39 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
   z-index: 4;
   display: flex;
   gap: 0;
-  border-radius: var(--r);
+  border-radius: var(--r-lg);
   background: var(--surface);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
+:root[data-theme="light"] .stats { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .stats button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   color: inherit;
-  min-width: 86px;
-  padding: var(--sp-2) var(--sp-3);
+  min-width: 96px;
+  padding: var(--sp-3) var(--sp-4);
   border-left: 1px solid var(--line);
 }
 .stats button:first-child { border-left: 0; }
 .stats button:hover { background: var(--bg-elev); }
-.stats span { font-size: var(--fs-11); color: var(--text-mute); }
-.stats b {
-  font-size: var(--fs-20);
-  font-weight: var(--fw-semibold);
-  color: var(--brand-bright);
-  font-variant-numeric: tabular-nums;
+.stats span {
   font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.stats b {
+  font-size: var(--fs-24);
+  font-weight: var(--fw-semibold);
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
   line-height: var(--lh-tight);
 }
 .stats .warn b { color: var(--cinnabar); }
@@ -350,19 +320,19 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
   z-index: 4;
   width: 268px;
   border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(6px);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
+:root[data-theme="light"] .panel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .panel > header {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--bg-elev);
+  padding: 12px var(--sp-3);
   border-bottom: 1px solid var(--line);
-  font-size: var(--fs-11); letter-spacing: 0.04em; color: var(--text-mute);
+  font-size: var(--fs-13); font-weight: var(--fw-semibold); color: var(--text-strong);
 }
-.panel > header em { font-style: normal; color: var(--cinnabar); font-size: var(--fs-11); }
+.panel > header em { font-style: normal; font-weight: var(--fw-regular); color: var(--cinnabar); font-size: var(--fs-11); }
 .panel > header.sub { border-top: 1px solid var(--line); }
 
 .flow-panel { left: var(--sp-5); top: 96px; }
@@ -420,21 +390,19 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
   flex-direction: column;
   gap: 0;
   border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(6px);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
+:root[data-theme="light"] .hits { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .hits-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: var(--fs-11);
-  letter-spacing: 0.04em;
-  color: var(--text-mute);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--bg-elev);
+  padding: 12px var(--sp-3);
   border-bottom: 1px solid var(--line);
+  font-size: var(--fs-13); font-weight: var(--fw-semibold); color: var(--text-strong);
 }
 .hits li:not(.hits-head) {
   display: grid;

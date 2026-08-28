@@ -91,18 +91,19 @@ onMounted(load)
 /* 卡片按内容定高：页面级 flex 拉伸会把四张卡撑成等高，
    内容只占上半、下半留白，反而显得空。 */
 .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-3); align-content: start; align-items: start; }
-.spanel { padding: var(--sp-4); border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: var(--sp-3); }
-.spanel h3 { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-medium); }
-.spanel h3 i { width: 2px; height: 14px; background: var(--gold); border-radius: 1px; }
+.spanel { padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--sp-3); }
+:root[data-theme="light"] .spanel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
+.spanel h3 { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); }
+.spanel h3 i { width: 2px; height: 14px; background: var(--brand); border-radius: 1px; }
 .sfield { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-12); color: var(--text-mute); }
-.sfield input { height: 32px; padding: 0 var(--sp-3); border-radius: var(--r); background: var(--bg-void); border: 1px solid var(--line); color: var(--text); outline: none; font-size: var(--fs-13); }
-.sfield input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.sfield input { height: 32px; padding: 0 var(--sp-3); border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text-strong); outline: none; font-size: var(--fs-13); }
+.sfield input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); background: var(--surface); }
 .ints { display: flex; flex-direction: column; gap: var(--sp-2); }
 .int-row { display: flex; align-items: center; justify-content: space-between; min-height: 32px; padding: var(--sp-1) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
 .int-name { font-family: var(--font-mono); color: var(--text-mute); text-transform: capitalize; }
 .acct { display: flex; align-items: center; gap: var(--sp-3); }
-.acct-avatar { width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center; background: var(--gold-soft); color: var(--gold-bright); font-weight: var(--fw-semibold); border: 1px solid var(--line-bright); }
-.theme-seg { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; padding: 3px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-glass); }
-.theme-seg button { height: 28px; border-radius: var(--r-sm); font-size: var(--fs-12); color: var(--text-mute); }
-.theme-seg button.on { background: var(--bg-elev); color: var(--text-strong); border: 1px solid var(--line); }
+.acct-avatar { width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-weight: var(--fw-semibold); border: 1px solid var(--line-bright); }
+.theme-seg { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; padding: 3px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); }
+.theme-seg button { height: 28px; border-radius: var(--r-sm); border: 1px solid transparent; font-size: var(--fs-12); color: var(--text-mute); }
+.theme-seg button.on { background: var(--surface); color: var(--text-strong); border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
 </style>

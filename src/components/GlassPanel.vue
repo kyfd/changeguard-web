@@ -22,6 +22,7 @@ withDefaults(defineProps<{
 </template>
 
 <style scoped>
+/* 哑光石面：surface + hairline 边 + 沉降阴影，无玻璃无辉光 */
 .gp {
   position: relative;
   background: var(--surface);
@@ -29,20 +30,20 @@ withDefaults(defineProps<{
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: border-color var(--dur) var(--ease);
 }
-.gp:hover { border-color: var(--line-bright); }
-.gp-glow { box-shadow: var(--shadow-card); }
+:root[data-theme="light"] .gp {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card);
+}
 
-.gp-gold, .gp-cyan { color: var(--gold); }
+.gp-gold, .gp-cyan { color: var(--brand); }
 .gp-blue { color: var(--text-mute); }
 .gp-purple { color: var(--text-mute); }
 .gp-amber { color: var(--amber); }
 .gp-red { color: var(--cinnabar); }
 .gp-green { color: var(--jade); }
 
-.gp-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.95rem 1.2rem 0.5rem; }
+.gp-header { display: flex; align-items: center; gap: 0.5rem; padding: 14px 16px 4px; }
 .gp-icon { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
-.gp-title { font-size: 0.95rem; font-weight: 500; color: var(--text-strong); letter-spacing: 0; }
-.gp-body { padding: 0.35rem 1.2rem 1.15rem; }
+.gp-title { font-size: var(--fs-14); font-weight: var(--fw-semibold); color: var(--text-strong); letter-spacing: 0; }
+.gp-body { padding: 0.35rem 16px 16px; }
 </style>

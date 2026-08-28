@@ -61,7 +61,9 @@ function changeCount(a: any) {
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
+:root[data-theme="light"] .ledger { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .ledger-head,
 .row {
   display: grid;
@@ -71,12 +73,15 @@ function changeCount(a: any) {
   padding: var(--sp-3) var(--sp-4);
 }
 .ledger-head {
-  font-size: var(--fs-12);
-  color: var(--text-mute);
-  border-bottom: 1px solid var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
-  background: var(--surface-2);
+  background: var(--surface);
   z-index: 1;
   padding-top: var(--sp-2);
   padding-bottom: var(--sp-2);
@@ -86,7 +91,7 @@ function changeCount(a: any) {
   min-width: 0;
 }
 .row:first-of-type { border-top: none; }
-.row:hover { background: var(--gold-soft); }
+.row:hover { background: var(--bg-elev); }
 .row h3 {
   margin: 0;
   font-size: var(--fs-13);
@@ -115,10 +120,10 @@ function changeCount(a: any) {
   white-space: nowrap;
 }
 .count b {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--fs-14);
   font-weight: var(--fw-semibold);
-  color: var(--gold-bright);
+  color: var(--brand);
   margin-right: 2px;
   font-variant-numeric: tabular-nums;
 }

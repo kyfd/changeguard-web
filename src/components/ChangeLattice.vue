@@ -43,8 +43,12 @@ const EDGES: [string, string][] = [
   ['pass', 'approve'], ['evidence', 'audit'],
 ]
 
-const PULSE: string[] = ['sql', 'verify', 'approve', 'gate']
-const PERIODS = [0.045, 0.032, 0.022, 0.014]
+/* 语义着色：高危命中 = 朱砂，待审积压 = 琥珀，其余保持静默 */
+const RISK_NODES = new Set(['sql', 'verify'])
+const WARN_NODES = new Set(['approve', 'gate'])
+
+/* 3 条参考轨（hairline），节点落在轨上；外圈承载 ring2 + 卫星 */
+const RING_K = [0.36, 0.62, 0.88]
 
 const lastPlaced = new Map<string, { x: number; y: number; n: NodeDef }>()
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -53,43 +57,31 @@ let raf = 0
 let w = 0
 let h = 0
 let dpr = 1
-let mx = 0.5
-let my = 0.5
-let tx = 0.5
-let ty = 0.5
-const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-const dust: { x: number; y: number; r: number; a: number; p: number }[] = []
+let mx = -1
+let my = -1
+let hoverId = ''
+
+const SHIELD_PATH = new Path2D(
+  'M12 2.6 4.4 5.45v6.2c0 4.78 3.3 7.87 7.6 9.75 4.3-1.88 7.6-4.97 7.6-9.75v-6.2Z',
+)
+const SHIELD_BAR = new Path2D('M7.1 10.9h9.8v2.2h-9.8Z')
 
 function nodesNow(): NodeDef[] {
   const extra: NodeDef[] = (props.satellites || []).slice(0, 8).map((s, i) => ({
     id: s.id,
     label: s.label,
-    ring: 3,
+    ring: 2,
     a0: (i / Math.max(1, Math.min(8, props.satellites.length))) * Math.PI * 2 + 0.2,
     route: 'apps',
   }))
   return extra.length ? [...CORE, ...extra] : [
     ...CORE,
-    { id: 'sat-a', label: '预发', ring: 3, a0: 0.4, route: 'risks' },
-    { id: 'sat-b', label: '灰度', ring: 3, a0: 1.6, route: 'changes' },
-    { id: 'sat-c', label: '生产', ring: 3, a0: 2.8, route: 'approvals' },
-    { id: 'sat-d', label: '回放', ring: 3, a0: 4.0, route: 'audits' },
-    { id: 'sat-e', label: '下游', ring: 3, a0: 5.2, route: 'apps' },
+    { id: 'sat-a', label: '预发', ring: 2, a0: 0.75, route: 'risks' },
+    { id: 'sat-b', label: '灰度', ring: 2, a0: 1.85, route: 'changes' },
+    { id: 'sat-c', label: '生产', ring: 2, a0: 2.95, route: 'approvals' },
+    { id: 'sat-d', label: '回放', ring: 2, a0: 4.05, route: 'audits' },
+    { id: 'sat-e', label: '下游', ring: 2, a0: 5.15, route: 'apps' },
   ]
-}
-
-function seedDust() {
-  dust.length = 0
-  const n = Math.max(40, Math.min(120, Math.floor((w * h) / 18000)))
-  for (let i = 0; i < n; i++) {
-    dust.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: Math.random() * 1.2 + 0.2,
-      a: 0.08 + Math.random() * 0.28,
-      p: Math.random() * Math.PI * 2,
-    })
-  }
 }
 
 function resize() {
@@ -101,241 +93,202 @@ function resize() {
   canvas.value.height = Math.floor(h * dpr)
   ctx = canvas.value.getContext('2d', { alpha: true })
   ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
-  seedDust()
 }
 
-function cssVar(name: string, fallback: string) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
-}
-function hexRgb(hex: string): [number, number, number] {
-  const raw = hex.replace('#', '').trim()
-  if (raw.length === 3) return [parseInt(raw[0] + raw[0], 16), parseInt(raw[1] + raw[1], 16), parseInt(raw[2] + raw[2], 16)]
-  if (raw.length >= 6) return [parseInt(raw.slice(0, 2), 16), parseInt(raw.slice(2, 4), 16), parseInt(raw.slice(4, 6), 16)]
-  return [77, 139, 255]
-}
-
-function posOf(n: NodeDef, t: number, cx: number, cy: number, rx: number, ry: number) {
-  const ang = n.a0 + (reduced ? 0 : t * PERIODS[Math.min(n.ring, PERIODS.length - 1)])
-  const m = props.expand ? [0.34, 0.52, 0.72, 0.92] : [0.22, 0.38, 0.56, 0.74]
-  const k = m[n.ring] ?? 0.9
-  return { x: cx + Math.cos(ang) * rx * k, y: cy + Math.sin(ang) * ry * k, n }
-}
-
-function drawAperture(c: CanvasRenderingContext2D, x: number, y: number, r: number, t: number, ir: number, ig: number, ib: number) {
-  const breath = reduced ? 1 : 0.96 + Math.sin(t * 0.7) * 0.04
-  const R = r * breath
-  c.save()
-  c.translate(x, y)
-  const bloom = c.createRadialGradient(0, 0, 0, 0, 0, R * 4.2)
-  bloom.addColorStop(0, `rgba(${ir},${ig},${ib},0.48)`)
-  bloom.addColorStop(0.35, `rgba(${ir},${ig},${ib},0.07)`)
-  bloom.addColorStop(1, `rgba(${ir},${ig},${ib},0)`)
-  c.fillStyle = bloom
-  c.beginPath()
-  c.arc(0, 0, R * 3, 0, Math.PI * 2)
-  c.fill()
-  for (let i = 0; i < 3; i++) {
-    c.beginPath()
-    c.arc(0, 0, R * (0.55 + i * 0.24), 0, Math.PI * 2)
-    c.strokeStyle = `rgba(${ir},${ig},${ib},${0.55 - i * 0.12})`
-    c.lineWidth = i === 0 ? 1.8 : 1.1
-    c.stroke()
+/* 每帧一次性读取主题色，避免逐节点查询计算样式 */
+function palette() {
+  const s = getComputedStyle(document.documentElement)
+  const get = (n: string, fb: string) => s.getPropertyValue(n).trim() || fb
+  return {
+    brand: get('--brand', '#4a55cc'),
+    brandSoft: get('--brand-soft', 'rgba(74,85,204,0.08)'),
+    lineBright: get('--line-bright', 'rgba(74,85,204,0.32)'),
+    line: get('--line', 'rgba(22,28,45,0.10)'),
+    lineStrong: get('--line-strong', 'rgba(22,28,45,0.17)'),
+    cinnabar: get('--cinnabar', '#c73a3f'),
+    amber: get('--amber', '#96660d'),
+    textFaint: get('--text-faint', '#6e7684'),
+    textMute: get('--text-mute', '#5f6775'),
+    text: get('--text', '#333b47'),
+    bgVoid: get('--bg-void', '#f6f7f9'),
   }
-  const core = c.createRadialGradient(-R * 0.12, -R * 0.14, 0, 0, 0, R * 0.38)
-  core.addColorStop(0, 'rgba(243,251,255,0.95)')
-  core.addColorStop(0.4, `rgba(${ir},${ig},${ib},0.55)`)
-  core.addColorStop(1, `rgba(${ir},${ig},${ib},0.04)`)
-  c.fillStyle = core
-  c.beginPath()
-  c.arc(0, 0, R * 0.34, 0, Math.PI * 2)
-  c.fill()
-  c.restore()
 }
 
-function frame(now: number) {
-  if (!ctx) return
-  const t = now * 0.001
-  const lerp = reduced ? 1 : 0.05
-  tx += (mx - tx) * lerp
-  ty += (my - ty) * lerp
-  const px = (tx - 0.5) * (props.expand ? 28 : 14)
-  const py = (ty - 0.5) * (props.expand ? 20 : 10)
+function posOf(n: NodeDef, cx: number, cy: number, rx: number, ry: number) {
+  const m = RING_K[Math.min(n.ring, RING_K.length - 1)]
+  return { x: cx + Math.cos(n.a0) * rx * m, y: cy + Math.sin(n.a0) * ry * m, n }
+}
 
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, s: number, r: number) {
+  c.beginPath()
+  c.moveTo(x + r, y)
+  c.lineTo(x + s - r, y)
+  c.quadraticCurveTo(x + s, y, x + s, y + r)
+  c.lineTo(x + s, y + s - r)
+  c.quadraticCurveTo(x + s, y + s, x + s - r, y + s)
+  c.lineTo(x + r, y + s)
+  c.quadraticCurveTo(x, y + s, x, y + s - r)
+  c.lineTo(x, y + r)
+  c.quadraticCurveTo(x, y, x + r, y)
+  c.closePath()
+}
+
+/* 中心枢纽：扁平圆盘 + 盾形标识 + mono 品牌字，无辉光 */
+function drawHub(c: CanvasRenderingContext2D, x: number, y: number, pal: ReturnType<typeof palette>) {
+  const R = props.expand ? 26 : 22
+  c.beginPath()
+  c.arc(x, y, R, 0, Math.PI * 2)
+  c.fillStyle = pal.brandSoft
+  c.fill()
+  c.strokeStyle = pal.lineBright
+  c.lineWidth = 1
+  c.stroke()
+
+  const s = R / 15
+  c.save()
+  c.translate(x - 12 * s, y - 12 * s)
+  c.scale(s, s)
+  c.strokeStyle = pal.brand
+  c.lineWidth = 1.6
+  c.lineJoin = 'round'
+  c.stroke(SHIELD_PATH)
+  c.fillStyle = pal.brand
+  c.fill(SHIELD_BAR)
+  c.restore()
+
+  c.font = '11px "JetBrains Mono", monospace'
+  c.fillStyle = pal.textMute
+  c.textAlign = 'center'
+  c.textBaseline = 'middle'
+  c.fillText('ChangeGuard', x, y + R + 14)
+}
+
+function draw() {
+  if (!ctx) return
+  const pal = palette()
   ctx.clearRect(0, 0, w, h)
 
-  const [ir, ig, ib] = hexRgb(cssVar('--brand', '#4d8bff'))
-  const [tr, tg, tb] = hexRgb(cssVar('--text', '#d7e6ee'))
-  const [ar, ag, ab] = hexRgb(cssVar('--amber', '#f0b429'))
-  const [vr, vg, vb] = hexRgb(cssVar('--bg-void', '#05070c'))
-  const ice = (a: number) => `rgba(${ir},${ig},${ib},${a})`
-  const ink = (a: number) => `rgba(${tr},${tg},${tb},${a})`
-  const amb = (a: number) => `rgba(${ar},${ag},${ab},${a})`
-
-  const cx = w * 0.5 + px
-  const cy = h * (props.expand ? 0.52 : 0.46) + py
-  // 两侧各有 268px 信息面板，横向半径需退让否则外圈节点标签被压住
+  const cx = w * 0.5
+  const cy = h * (props.expand ? 0.52 : 0.48)
+  // 两侧信息面板让出横向空间
   const inset = props.expand ? Math.min(320, w * 0.24) : 0
   const rx = props.expand ? Math.max(240, (w - inset * 2) * 0.46) : Math.min(w, h) * 0.42
-  const ry = props.expand ? h * 0.44 : Math.min(w, h) * 0.38
+  const ry = props.expand ? h * 0.42 : h * 0.4
   const list = nodesNow()
 
-  for (const d of dust) {
-    const dx = d.x * w + px * 0.4
-    const dy = d.y * h + py * 0.4
-    const tw = reduced ? d.a : d.a * (0.65 + Math.sin(t * 0.7 + d.p) * 0.35)
-    ctx.beginPath()
-    ctx.fillStyle = ink(tw)
-    ctx.arc(dx, dy, d.r, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const rings = 4
-  for (let i = 0; i < rings; i++) {
-    const k = props.expand ? [0.34, 0.52, 0.72, 0.92][i] : [0.22, 0.38, 0.56, 0.74][i]
+  // 参考轨：3 条 hairline
+  ctx.strokeStyle = pal.line
+  ctx.lineWidth = 1
+  for (const k of RING_K) {
     ctx.beginPath()
     ctx.ellipse(cx, cy, rx * k, ry * k, 0, 0, Math.PI * 2)
-    ctx.strokeStyle = ice(0.38 - i * 0.05)
-    ctx.lineWidth = i === rings - 1 ? 1.6 : 1.15
-    ctx.setLineDash(i % 2 ? [3, 8] : [])
     ctx.stroke()
-    ctx.setLineDash([])
   }
 
   const placed = new Map<string, { x: number; y: number; n: NodeDef }>()
-  for (const n of list) placed.set(n.id, posOf(n, t, cx, cy, rx, ry))
+  for (const n of list) placed.set(n.id, posOf(n, cx, cy, rx, ry))
 
-  // 辐条只画靠近节点的一段：整条连到中心会让 20+ 条线交叉铺满画面，
-  // 既不表达真实依赖，又盖住节点标签。
-  for (const n of list) {
-    const p = placed.get(n.id)!
-    const dx = p.x - cx
-    const dy = p.y - cy
-    const len = Math.hypot(dx, dy) || 1
-    const stub = Math.min(0.34, 26 / len + 0.16)
-    ctx.beginPath()
-    ctx.moveTo(p.x - dx * stub, p.y - dy * stub)
-    ctx.lineTo(p.x, p.y)
-    ctx.strokeStyle = ice(n.ring >= 2 ? 0.12 : 0.2)
-    ctx.lineWidth = 1
-    ctx.stroke()
+  // 节点间连线：治理链路，1px hairline。
+  // 两端计数都为 0 的链路降到 35% 透明度：零态下不显示穿过枢纽的乱线，
+  // 有活动的链路保持完整。
+  const countOf = (id: string) => {
+    const sat = props.satellites.find(s => s.id === id)
+    const raw = sat?.value ?? props.values[id]
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : 1
   }
-
+  ctx.lineWidth = 1
   for (const [a, b] of EDGES) {
     const pa = placed.get(a)
     const pb = placed.get(b)
     if (!pa || !pb) continue
+    ctx.globalAlpha = countOf(a) === 0 && countOf(b) === 0 ? 0.35 : 1
     ctx.beginPath()
     ctx.moveTo(pa.x, pa.y)
     ctx.lineTo(pb.x, pb.y)
-    ctx.strokeStyle = ice(0.22)
-    ctx.lineWidth = 1
     ctx.stroke()
   }
+  ctx.globalAlpha = 1
 
-  /* 数据流：多个粒子在治理链路上首尾相接地跑，表现"变更持续流经门禁" */
-  const PARTICLES = props.expand ? 5 : 3
-  for (let k = 0; k < PARTICLES; k++) {
-    const pulseT = reduced ? 0.35 : ((t * 0.16) + k / PARTICLES) % 1
-    const seg = Math.min(PULSE.length - 2, Math.floor(pulseT * (PULSE.length - 1)))
-    const local = pulseT * (PULSE.length - 1) - seg
-    const pa = placed.get(PULSE[seg])
-    const pb = placed.get(PULSE[seg + 1])
-    if (!pa || !pb) continue
-    const qx = pa.x + (pb.x - pa.x) * local
-    const qy = pa.y + (pb.y - pa.y) * local
-    /* 拖尾：朝来向拉一条渐隐线段 */
-    const tlx = qx - (pb.x - pa.x) * 0.12
-    const tly = qy - (pb.y - pa.y) * 0.12
-    const tg2 = ctx.createLinearGradient(tlx, tly, qx, qy)
-    tg2.addColorStop(0, amb(0))
-    tg2.addColorStop(1, amb(0.55))
-    ctx.strokeStyle = tg2
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo(tlx, tly)
-    ctx.lineTo(qx, qy)
-    ctx.stroke()
-    const R = k === 0 ? 18 : 12
-    const pg = ctx.createRadialGradient(qx, qy, 0, qx, qy, R)
-    pg.addColorStop(0, amb(0.9))
-    pg.addColorStop(0.45, amb(0.22))
-    pg.addColorStop(1, amb(0))
-    ctx.fillStyle = pg
-    ctx.beginPath()
-    ctx.arc(qx, qy, R, 0, Math.PI * 2)
-    ctx.fill()
+  // hover 命中：指针最近的节点（仅交互模式）
+  hoverId = ''
+  if (props.interactive && mx >= 0) {
+    let bestD = 16
+    placed.forEach((p, id) => {
+      const d = Math.hypot(p.x - mx, p.y - my)
+      if (d < bestD) { bestD = d; hoverId = id }
+    })
   }
 
-  drawAperture(ctx, cx, cy, Math.min(rx, ry) * 0.09, t, ir, ig, ib)
-  if (props.expand) {
-    ctx.font = '12px "Space Grotesk", "PingFang SC", sans-serif'
-    ctx.fillStyle = ink(0.7)
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.letterSpacing = '0.12em'
-    ctx.fillText('ChangeGuard', cx, cy + Math.min(rx, ry) * 0.09 + 18)
-    ctx.letterSpacing = '0px'
-  }
+  drawHub(ctx, cx, cy, pal)
 
-  lastPlaced.clear()
-  const nodeR = props.expand ? 9 : 6
+  const nodeR = props.expand ? 8 : 7
   for (const n of list) {
     const p = placed.get(n.id)!
     const hot = props.hot.includes(n.id)
-    const sat = props.satellites.find(s => s.id === n.id)
-    /* 热点节点发散告警环：让"哪里有问题"在满屏节点中一眼可见 */
-    if (hot && !reduced) {
-      for (let k = 0; k < 2; k++) {
-        const ph = ((t * 0.55) + k * 0.5) % 1
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, nodeR + 5 + ph * 26, 0, Math.PI * 2)
-        ctx.strokeStyle = amb(0.45 * (1 - ph))
-        ctx.lineWidth = 1.4
-        ctx.stroke()
-      }
-    }
+    const risk = hot && RISK_NODES.has(n.id)
+    const warn = hot && WARN_NODES.has(n.id)
+    const hovered = hoverId === n.id
+
     ctx.beginPath()
-    ctx.fillStyle = hot ? amb(0.42) : ice(0.32)
-    ctx.arc(p.x, p.y, nodeR + 5, 0, Math.PI * 2)
+    rrect(ctx, p.x - nodeR / 2, p.y - nodeR / 2, nodeR, nodeR, 2)
+    if (hovered) ctx.fillStyle = pal.brand
+    else if (risk) ctx.fillStyle = pal.cinnabar
+    else if (warn) ctx.fillStyle = pal.amber
+    else ctx.fillStyle = pal.textFaint
     ctx.fill()
-    ctx.beginPath()
-    ctx.fillStyle = hot ? amb(1) : ice(1)
-    ctx.arc(p.x, p.y, nodeR * 0.48, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.font = n.latin
-      ? `${props.expand ? 13 : 11}px "JetBrains Mono", monospace`
-      : `${props.expand ? 14 : 12}px "PingFang SC", "Microsoft YaHei", sans-serif`
+
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    /* 描边取页面底色而非写死黑：浅色主题下黑边会变成脏轮廓 */
-    if (props.expand) {
-      ctx.lineWidth = 3.5
-      ctx.strokeStyle = `rgba(${vr},${vg},${vb},0.82)`
-      ctx.lineJoin = 'round'
-      ctx.strokeText(n.label, p.x, p.y + nodeR + 6)
-    }
-    ctx.fillStyle = hot ? amb(1) : ink(0.95)
-    ctx.fillText(n.label, p.x, p.y + nodeR + 6)
-    const v = sat?.value ?? props.values[n.id]
-    if (v !== undefined && v !== '') {
-      ctx.font = `${props.expand ? 12 : 11}px "JetBrains Mono", monospace`
-      ctx.fillStyle = hot ? amb(1) : ice(0.95)
-      ctx.fillText(String(v), p.x, p.y + nodeR + 22)
+    // 底色 knock-out，保证标签压线时可读
+    ctx.lineWidth = 3
+    ctx.strokeStyle = pal.bgVoid
+    ctx.lineJoin = 'round'
+    ctx.font = n.latin
+      ? '12px "JetBrains Mono", monospace'
+      : '12px "PingFang SC", "Microsoft YaHei", sans-serif'
+    ctx.strokeText(n.label, p.x, p.y + nodeR / 2 + 5)
+    ctx.fillStyle = hovered ? pal.brand : pal.textMute
+    ctx.fillText(n.label, p.x, p.y + nodeR / 2 + 5)
+
+    const v = props.values[n.id]
+    const sat = props.satellites.find(s => s.id === n.id)
+    const shown = sat?.value ?? v
+    if (shown !== undefined && shown !== '') {
+      ctx.font = '11px "JetBrains Mono", monospace'
+      ctx.strokeText(String(shown), p.x, p.y + nodeR / 2 + 21)
+      ctx.fillStyle = risk ? pal.cinnabar : warn ? pal.amber : pal.text
+      ctx.fillText(String(shown), p.x, p.y + nodeR / 2 + 21)
     }
     lastPlaced.set(n.id, p)
   }
 
-  if (!reduced) raf = requestAnimationFrame(frame)
+  /* 静态帧循环：重绘始终是同一张平面图（无任何持续动画），
+     同时天然覆盖主题切换与数据更新后的重绘 */
+  raf = requestAnimationFrame(draw)
+}
+
+function onResize() {
+  resize()
+  draw()
 }
 
 function onMove(e: PointerEvent) {
   const rect = canvas.value?.getBoundingClientRect()
   if (!rect) return
-  mx = (e.clientX - rect.left) / Math.max(rect.width, 1)
-  my = (e.clientY - rect.top) / Math.max(rect.height, 1)
+  mx = e.clientX - rect.left
+  my = e.clientY - rect.top
+  if (props.expand) draw()
+  else if (!raf) raf = requestAnimationFrame(draw)
 }
 
-function onClick(e: PointerEvent) {
+function onLeave() {
+  mx = -1
+  my = -1
+  if (props.expand) draw()
+}
+
+function onClick(e: MouseEvent) {
   if (!props.interactive) return
   const rect = canvas.value?.getBoundingClientRect()
   if (!rect) return
@@ -350,19 +303,23 @@ function onClick(e: PointerEvent) {
   if (bestId) emit('select', bestId)
 }
 
-watch(() => props.satellites, () => {}, { deep: true })
+watch(() => [props.values, props.hot, props.satellites], () => {
+  if (props.expand) draw()
+}, { deep: true })
 
 onMounted(() => {
   resize()
-  window.addEventListener('resize', resize, { passive: true })
+  window.addEventListener('resize', onResize)
   window.addEventListener('pointermove', onMove, { passive: true })
+  canvas.value?.addEventListener('pointerleave', onLeave)
   canvas.value?.addEventListener('click', onClick)
-  raf = requestAnimationFrame(frame)
+  raf = requestAnimationFrame(draw)
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
-  window.removeEventListener('resize', resize)
+  window.removeEventListener('resize', onResize)
   window.removeEventListener('pointermove', onMove)
+  canvas.value?.removeEventListener('pointerleave', onLeave)
   canvas.value?.removeEventListener('click', onClick)
 })
 </script>

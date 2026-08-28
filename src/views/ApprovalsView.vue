@@ -61,11 +61,13 @@ async function act(id: string, action: 'approve' | 'reject') {
 .ap-card {
   padding: 1.2rem 1.35rem 1.15rem; border-radius: var(--r-lg);
   background: var(--surface); border: 1px solid var(--line);
-  border-top: 2px solid var(--gold);
+  box-shadow: var(--shadow-card);
+  border-top: 2px solid var(--brand);
 }
+:root[data-theme="light"] .ap-card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .ap-card header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.55rem; }
-.ap-card h3 { margin: 0; font-size: 1.28rem; color: var(--text-strong); cursor: pointer; font-weight: 500; font-family: var(--font-display); }
-.ap-card h3:hover { color: var(--gold-bright); }
+.ap-card h3 { margin: 0; font-size: 1.28rem; color: var(--text-strong); cursor: pointer; font-weight: var(--fw-semibold); font-family: var(--font-sans); letter-spacing: -0.01em; }
+.ap-card h3:hover { color: var(--brand-bright); }
 .ap-card p { margin: 0.45rem 0 0.85rem; font-size: 0.9rem; color: var(--text-mute); }
 .ap-meta { display: flex; gap: 1rem; font-size: 0.76rem; color: var(--text-faint); margin-bottom: 0.95rem; }
 .ap-card footer { display: flex; gap: 0.5rem; flex-wrap: wrap; }

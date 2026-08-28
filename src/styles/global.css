@@ -8,29 +8,16 @@ body {
   font-family: var(--font-sans);
   background: var(--bg-void);
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.5;
   font-size: 14px;
   overflow: hidden;
 }
 #app { height: 100dvh; }
 
-/* Hairline grid: technical texture at near-threshold contrast */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 32px,
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 32px 100%,
-    linear-gradient(180deg, var(--bg-void) 0%, var(--bg-deep) 100%);
-  z-index: -2;
-  pointer-events: none;
-}
-
 h1, h2, h3, h4 { color: var(--text-strong); font-weight: var(--fw-semibold); line-height: var(--lh-tight); font-family: var(--font-sans); }
-h1 { font-size: var(--fs-24); letter-spacing: -0.01em; }
-h2 { font-size: var(--fs-20); letter-spacing: -0.005em; }
-h3 { font-size: var(--fs-16); }
+h1 { font-size: var(--fs-20); letter-spacing: -0.01em; }
+h2 { font-size: var(--fs-16); letter-spacing: -0.005em; }
+h3 { font-size: var(--fs-14); }
 a { color: var(--brand-bright); text-decoration: none; }
 /* 表单控件不继承 font-size 会退回 UA 默认的 13.3333px，是全站小数字号的主要来源 */
 button, input, textarea, select { font-family: inherit; font-size: inherit; line-height: inherit; }
@@ -52,10 +39,19 @@ table { font-variant-numeric: tabular-nums; }
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.display { font-family: var(--font-brand); font-weight: 650; letter-spacing: 0.02em; }
+.latin { font-family: var(--font-brand); }
+.display { font-family: var(--font-sans); font-weight: 650; letter-spacing: -0.01em; }
+/* 分组名 / 卡片标签 / 徽标性的小号大写说明文字 */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
 .text-mute { color: var(--text-mute); }
 .text-faint { color: var(--text-faint); }
-.text-cyan { color: var(--brand-bright); }
+.text-brand { color: var(--brand-bright); }
 .text-danger { color: var(--cinnabar); }
 
 .dot { display: inline-block; width: 6px; height: 6px; border-radius: var(--r-xs); }
@@ -64,10 +60,9 @@ table { font-variant-numeric: tabular-nums; }
 .dot-err { background: var(--cinnabar); box-shadow: 0 0 0 3px var(--cinnabar-soft); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes glow-breathe { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
 @keyframes float-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 220ms var(--ease); }
+.fade-enter-active, .fade-leave-active { transition: opacity 180ms var(--ease); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
