@@ -20,6 +20,8 @@ const detailLoading = ref(false)
 const detailError = ref('')
 const detailErrorStatus = ref(0)
 const change = computed(() => detail.value || ws.changes.find(c => c.id === changeId.value))
+const blockingCount = computed(() => (change.value?.findings || []).filter((f: any) => f.blocking).length)
+const openCount = computed(() => (change.value?.findings || []).filter((f: any) => f.status !== 'RESOLVED').length)
 
 const statusLabel: Record<string, string> = {
   DRAFT: '草稿', CHECKING: '检查中', CHECK_FAILED: '检查失败', READY_FOR_EXPERIMENT: '待验证',
@@ -167,12 +169,24 @@ const findingState: Record<string, [string, string]> = {
         <!-- 状态概览 -->
         <div class="dpanel">
           <div class="dpanel-head"><h3>变更状态</h3></div>
+          <!-- 结论先行：流程条已经表达了"卡在第几步"，这里要回答"为什么过不去" -->
+          <div v-if="blockingCount" class="verdict blocked">
+            <div class="verdict-main">
+              <strong>{{ blockingCount }} 项阻断规则未解除，暂不可进入生产</strong>
+              <span>共 {{ change.findings?.length || 0 }} 项证据 · {{ openCount }} 项待处理</span>
+            </div>
+          </div>
+          <div v-else-if="change.findings?.length" class="verdict clear">
+            <div class="verdict-main">
+              <strong>无阻断项</strong>
+              <span>{{ change.findings.length }} 项证据已全部通过</span>
+            </div>
+          </div>
           <div class="status-strip">
-            <div class="status-chip"><span class="dot dot-ok"></span> 状态：{{ statusLabel[change.status] || change.status }}</div>
             <div class="status-chip"><span class="dot" :class="change.risk === 'HIGH' ? 'dot-err' : change.risk === 'MEDIUM' ? 'dot-warn' : 'dot-ok'"></span> 风险：{{ riskLabel[change.risk] || change.risk }}</div>
-            <div class="status-chip"><span class="dot dot-ok"></span> 负责人：{{ owner(change) }}</div>
             <div class="status-chip"><span class="dot dot-ok"></span> 环境：{{ change.environment || '—' }}</div>
             <div class="status-chip"><span class="dot dot-warn"></span> 证据：{{ evLabel[change.evidence_state] || '未验证' }}</div>
+            <div v-if="owner(change) !== '—'" class="status-chip"><span class="dot dot-ok"></span> 负责人：{{ owner(change) }}</div>
           </div>
           <p class="dpanel-desc">{{ change.description || '—' }}</p>
           <div class="sql-block" v-if="change.sql"><strong>变更 SQL</strong><pre class="mono">{{ change.sql }}</pre></div>
@@ -331,6 +345,19 @@ const findingState: Record<string, [string, string]> = {
 .finding-state-verified { background: var(--green-soft); color: var(--green-bright); }
 .finding-title-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .blocking-tag { padding: .1em .5em; border-radius: var(--r-pill); background: var(--red); color: #fff; font-size: .68rem; }
+/* 裁决条：把"能不能上生产"这个结论提到首屏，不必滚到证据列表末尾 */
+.verdict {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .7rem .85rem; margin-bottom: .75rem;
+  border: 1px solid var(--line); border-radius: var(--r);
+  border-left: 3px solid var(--line-bright);
+}
+.verdict.blocked { border-left-color: var(--red); background: var(--red-soft); }
+.verdict.clear { border-left-color: var(--green, #3fb950); }
+.verdict-main { display: grid; gap: .16rem; }
+.verdict-main strong { font-size: .95rem; color: var(--text-strong); font-weight: 600; }
+.verdict.blocked .verdict-main strong { color: var(--red-bright); }
+.verdict-main span { font-size: .78rem; color: var(--text-mute); }
 
 /* Clawbot */
 .agent-qa-list { display: grid; gap: .8rem; max-height: 460px; overflow-y: auto; }

@@ -66,7 +66,7 @@ async function refresh() {
     </div>
 
     <TechTable :columns="columns" :rows="rows" :row-key="(r: any) => r.id" empty="没有匹配的变更" :click="(row: any) => router.push({ name: 'change-detail', params: { id: row.id } })">
-      <template #cell-id="{ row }"><span class="id-cell">{{ String(row.id).slice(0, 8) }}</span></template>
+      <template #cell-id="{ row }"><span class="id-cell" :title="row.id">{{ String(row.id).slice(0, 8) }}</span></template>
       <template #cell-title="{ row }"><span class="ellipsis">{{ row.title || row.summary || '未命名变更' }}</span></template>
       <template #cell-app="{ row }"><span class="muted">{{ row.application_name || row.application_id || '—' }}</span></template>
       <template #cell-risk="{ row }"><StatusBadge type="risk" :value="row.risk" size="sm" /></template>
