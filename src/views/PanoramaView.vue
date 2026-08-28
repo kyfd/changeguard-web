@@ -49,7 +49,10 @@ function useCountUp(source: () => number) {
   return n
 }
 
+const failedCount = computed(() => (ws.changes || []).filter((c: any) => c.status === 'CHECK_FAILED').length)
+
 const pendingN = useCountUp(() => pending.value)
+const failedN = useCountUp(() => failedCount.value)
 const highN = useCountUp(() => highRisk.value)
 const closureN = useCountUp(() => closureRate.value)
 const svcN = useCountUp(() => ws.apps?.length || 0)
@@ -125,13 +128,15 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
     </header>
 
     <div class="stats">
-      <button type="button" @click="go('approvals')"><span>待审批</span><b>{{ pendingN }}</b></button>
-      <button type="button" class="warn" @click="go('risks')"><span>高危</span><b>{{ highN }}</b></button>
+      <button type="button" :class="{ mute: !pending }" @click="go('approvals')"><span>待审批</span><b>{{ pendingN }}</b></button>
+      <button type="button" class="warn" :class="{ mute: !failedCount }" @click="go('changes')"><span>检查未通过</span><b>{{ failedN }}</b></button>
+      <button type="button" class="warn" :class="{ mute: !highRisk }" @click="go('risks')"><span>高危</span><b>{{ highN }}</b></button>
       <button type="button" @click="go('changes')"><span>闭环</span><b>{{ closureN }}%</b></button>
       <button type="button" @click="go('apps')"><span>服务</span><b>{{ svcN }}</b></button>
     </div>
 
     <ul v-if="topRules.length" class="hits">
+      <li class="hits-head mono">高频命中规则</li>
       <li v-for="(r, i) in topRules.slice(0, 3)" :key="r.code" @click="go('risks')">
         <em>{{ String(i + 1).padStart(2, '0') }}</em>
         <span>{{ r.title }}</span>
@@ -153,18 +158,44 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   color: var(--text);
   background: var(--bg-void);
 }
+/* 大屏底纹用 hairline 网格而非照片：照片高光会吞掉节点标签，
+   且画面主体应当是数据本身，不是素材。 */
 .field {
   position: absolute;
   inset: 0;
-  background: url("../assets/images/deck.jpg") center / cover no-repeat;
-  opacity: 0.58;
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 44px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 44px 100%;
+  mask-image: radial-gradient(120% 100% at 50% 50%, #000 35%, transparent 88%);
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 50%, #000 35%, transparent 88%);
 }
+/* 中心微亮，让视线落在图谱上；四角压暗收边 */
 .veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(70% 60% at 50% 52%, rgba(5, 7, 12, 0.08), rgba(5, 7, 12, 0.52) 78%),
-    linear-gradient(180deg, rgba(5, 7, 12, 0.22) 0%, transparent 22%, transparent 78%, rgba(5, 7, 12, 0.38) 100%);
+    radial-gradient(58% 52% at 50% 50%, color-mix(in srgb, var(--brand) 7%, transparent), transparent 72%),
+    radial-gradient(120% 90% at 50% 50%, transparent 55%, var(--bg-void) 100%);
+}
+/* 缓慢扫描带：大屏值守的时间感，不参与信息表达故极低对比 */
+.veil::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 42%,
+    color-mix(in srgb, var(--brand) 9%, transparent) 50%,
+    transparent 58%
+  );
+  animation: sweep 9s linear infinite;
+}
+@keyframes sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .veil::after { animation: none; opacity: 0; }
 }
 
 .hud {
@@ -183,23 +214,22 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
 .hud-brand strong {
   font-size: 1.15rem;
   font-weight: 650;
-  color: #fff;
+  color: var(--text-strong);
 }
-.hud-brief { font-size: 0.82rem; color: rgba(232, 242, 248, 0.88); }
-.hud-actions time { font-size: 0.84rem; color: rgba(232, 242, 248, 0.82); letter-spacing: 0.06em; }
+.hud-brief { font-size: 0.82rem; color: var(--text-mute); }
+.hud-actions time { font-size: 0.84rem; color: var(--text-mute); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
 .exit {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.38rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--line-bright);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
   color: var(--brand-bright);
   font-size: 0.8rem;
-  background: rgba(8, 14, 22, 0.55);
-  backdrop-filter: blur(10px);
+  background: var(--surface);
 }
-.exit:hover { background: var(--brand-soft); }
+.exit:hover { border-color: var(--line-bright); }
 
 .stats {
   position: absolute;
@@ -208,56 +238,77 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   transform: translateX(-50%);
   z-index: 4;
   display: flex;
-  gap: 1.6rem;
-  padding: 0.55rem 1.2rem;
-  border-radius: var(--r-pill);
-  background: rgba(10, 14, 20, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(14px);
+  gap: 0;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
 }
 .stats button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.15rem;
   color: inherit;
-  min-width: 3.2rem;
+  min-width: 5.4rem;
+  padding: 0.5rem 0.9rem;
+  border-left: 1px solid var(--line);
 }
-.stats span { font-size: 0.68rem; color: rgba(210, 226, 234, 0.78); }
+.stats button:first-child { border-left: 0; }
+.stats button:hover { background: var(--bg-elev); }
+.stats span { font-size: 0.68rem; color: var(--text-mute); }
 .stats b {
   font-size: 1.25rem;
   font-weight: 650;
   color: var(--brand-bright);
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  line-height: 1.1;
 }
 .stats .warn b { color: var(--cinnabar); }
+/* 与工作台一致：零值不抢视觉重心 */
+.stats .mute b { color: var(--text-faint); }
 
 .hits {
   position: absolute;
   right: 1.3rem;
   bottom: 2.6rem;
   z-index: 4;
-  width: 240px;
+  width: 264px;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
 }
-.hits li {
+.hits-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--text-mute);
+  padding: 0.5rem 0.6rem;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+}
+.hits li:not(.hits-head) {
   display: grid;
   grid-template-columns: 1.4rem 1fr auto;
   gap: 0.4rem;
   align-items: center;
-  padding: 0.4rem 0.55rem;
-  border-radius: var(--r-lg);
-  background: rgba(10, 14, 20, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 0.48rem 0.6rem;
+  border-top: 1px solid var(--line);
   cursor: pointer;
   font-size: 0.78rem;
 }
-.hits li:hover { border-color: var(--line-bright); }
-.hits em { color: var(--text-faint); font-size: 0.68rem; }
-.hits span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hits b { color: var(--brand-bright); }
+.hits li:not(.hits-head):first-of-type { border-top: 0; }
+.hits li:not(.hits-head):hover { background: var(--bg-elev); }
+.hits em { color: var(--text-faint); font-size: 0.68rem; font-style: normal; font-family: var(--font-mono); }
+.hits span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.hits b { color: var(--cinnabar); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 .hint {
   position: absolute;
@@ -267,7 +318,7 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   z-index: 4;
   text-align: center;
   font-size: 0.72rem;
-  color: rgba(214, 230, 238, 0.72);
+  color: var(--text-faint);
   letter-spacing: 0.04em;
   pointer-events: none;
 }

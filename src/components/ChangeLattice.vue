@@ -166,6 +166,7 @@ function frame(now: number) {
   const [ir, ig, ib] = hexRgb(cssVar('--brand', '#4d8bff'))
   const [tr, tg, tb] = hexRgb(cssVar('--text', '#d7e6ee'))
   const [ar, ag, ab] = hexRgb(cssVar('--amber', '#f0b429'))
+  const [vr, vg, vb] = hexRgb(cssVar('--bg-void', '#05070c'))
   const ice = (a: number) => `rgba(${ir},${ig},${ib},${a})`
   const ink = (a: number) => `rgba(${tr},${tg},${tb},${a})`
   const amb = (a: number) => `rgba(${ar},${ag},${ab},${a})`
@@ -223,31 +224,49 @@ function frame(now: number) {
     ctx.stroke()
   }
 
-  const pulseT = reduced ? 0.35 : (t * 0.16) % 1
-  const seg = Math.min(PULSE.length - 2, Math.floor(pulseT * (PULSE.length - 1)))
-  const local = pulseT * (PULSE.length - 1) - seg
-  const pa = placed.get(PULSE[seg])
-  const pb = placed.get(PULSE[seg + 1])
-  if (pa && pb) {
+  /* 数据流：多个粒子在治理链路上首尾相接地跑，表现"变更持续流经门禁" */
+  const PARTICLES = props.expand ? 5 : 3
+  for (let k = 0; k < PARTICLES; k++) {
+    const pulseT = reduced ? 0.35 : ((t * 0.16) + k / PARTICLES) % 1
+    const seg = Math.min(PULSE.length - 2, Math.floor(pulseT * (PULSE.length - 1)))
+    const local = pulseT * (PULSE.length - 1) - seg
+    const pa = placed.get(PULSE[seg])
+    const pb = placed.get(PULSE[seg + 1])
+    if (!pa || !pb) continue
     const qx = pa.x + (pb.x - pa.x) * local
     const qy = pa.y + (pb.y - pa.y) * local
-    const pg = ctx.createRadialGradient(qx, qy, 0, qx, qy, 18)
+    /* 拖尾：朝来向拉一条渐隐线段 */
+    const tlx = qx - (pb.x - pa.x) * 0.12
+    const tly = qy - (pb.y - pa.y) * 0.12
+    const tg2 = ctx.createLinearGradient(tlx, tly, qx, qy)
+    tg2.addColorStop(0, amb(0))
+    tg2.addColorStop(1, amb(0.55))
+    ctx.strokeStyle = tg2
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(tlx, tly)
+    ctx.lineTo(qx, qy)
+    ctx.stroke()
+    const R = k === 0 ? 18 : 12
+    const pg = ctx.createRadialGradient(qx, qy, 0, qx, qy, R)
     pg.addColorStop(0, amb(0.9))
     pg.addColorStop(0.45, amb(0.22))
     pg.addColorStop(1, amb(0))
     ctx.fillStyle = pg
     ctx.beginPath()
-    ctx.arc(qx, qy, 18, 0, Math.PI * 2)
+    ctx.arc(qx, qy, R, 0, Math.PI * 2)
     ctx.fill()
   }
 
   drawAperture(ctx, cx, cy, Math.min(rx, ry) * 0.09, t, ir, ig, ib)
   if (props.expand) {
     ctx.font = '12px "Space Grotesk", "PingFang SC", sans-serif'
-    ctx.fillStyle = ink(0.88)
+    ctx.fillStyle = ink(0.7)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('ChangeGuard', cx, cy + Math.min(rx, ry) * 0.09 + 16)
+    ctx.letterSpacing = '0.12em'
+    ctx.fillText('ChangeGuard', cx, cy + Math.min(rx, ry) * 0.09 + 18)
+    ctx.letterSpacing = '0px'
   }
 
   lastPlaced.clear()
@@ -256,6 +275,17 @@ function frame(now: number) {
     const p = placed.get(n.id)!
     const hot = props.hot.includes(n.id)
     const sat = props.satellites.find(s => s.id === n.id)
+    /* 热点节点发散告警环：让"哪里有问题"在满屏节点中一眼可见 */
+    if (hot && !reduced) {
+      for (let k = 0; k < 2; k++) {
+        const ph = ((t * 0.55) + k * 0.5) % 1
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, nodeR + 5 + ph * 26, 0, Math.PI * 2)
+        ctx.strokeStyle = amb(0.45 * (1 - ph))
+        ctx.lineWidth = 1.4
+        ctx.stroke()
+      }
+    }
     ctx.beginPath()
     ctx.fillStyle = hot ? amb(0.42) : ice(0.32)
     ctx.arc(p.x, p.y, nodeR + 5, 0, Math.PI * 2)
@@ -269,12 +299,14 @@ function frame(now: number) {
       : `${props.expand ? 14 : 12}px "PingFang SC", "Microsoft YaHei", sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
+    /* 描边取页面底色而非写死黑：浅色主题下黑边会变成脏轮廓 */
     if (props.expand) {
-      ctx.lineWidth = 4
-      ctx.strokeStyle = 'rgba(5,7,12,0.88)'
+      ctx.lineWidth = 3.5
+      ctx.strokeStyle = `rgba(${vr},${vg},${vb},0.82)`
+      ctx.lineJoin = 'round'
       ctx.strokeText(n.label, p.x, p.y + nodeR + 6)
     }
-    ctx.fillStyle = '#f4fbff'
+    ctx.fillStyle = hot ? amb(1) : ink(0.95)
     ctx.fillText(n.label, p.x, p.y + nodeR + 6)
     const v = sat?.value ?? props.values[n.id]
     if (v !== undefined && v !== '') {
