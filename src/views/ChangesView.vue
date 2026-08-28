@@ -87,9 +87,9 @@ async function refresh() {
 .load-error > div { display: grid; gap: .18rem; }
 .load-error strong { color: var(--red-bright); font-size: .86rem; }
 .load-error span { color: var(--text-mute); font-size: .78rem; }
-.meta-cell { display: flex; flex-direction: column; gap: .1rem; line-height: 1.35; }
-.meta-cell .owner { font-size: .82rem; color: var(--text); }
-.meta-cell .time { font-size: .74rem; color: var(--text-faint); }
+.meta-cell { display: flex; flex-direction: column; gap: 1px; line-height: var(--lh-snug); }
+.meta-cell .owner { font-size: var(--fs-13); color: var(--text); }
+.meta-cell .time { font-size: var(--fs-11); color: var(--text-faint); }
 @media (max-width: 720px) {
   .load-error { align-items: flex-start; }
   .toolbar { align-items: stretch; }

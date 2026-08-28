@@ -53,19 +53,32 @@ function open(id: string) { router.push({ name: 'change-detail', params: { id } 
 <style scoped>
 @import './page.css';
 .stat {
-  padding: 1.15rem 1.25rem; border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r);
   background: var(--surface); border: 1px solid var(--line);
 }
-.stat span { display: block; font-size: 0.78rem; color: var(--text-faint); }
-.stat strong { display: block; margin-top: 0.4rem; font-size: 2.2rem; color: var(--gold-bright); font-weight: 500; font-family: var(--font-display); }
-.stat.hi strong { color: var(--cinnabar); }
-.risk-list { display: grid; gap: 0.5rem; }
-.risk-row {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 0.8rem; align-items: center;
-  padding: 0.88rem 1.05rem; border-radius: var(--r); background: var(--surface);
-  border: 1px solid var(--line); text-align: left; color: inherit;
+.stat span { display: block; font-size: var(--fs-12); color: var(--text-mute); }
+/* 与工作台 KPI 同一档：同一个系统里同类指标不该有两种字号 */
+.stat strong {
+  display: block; margin-top: var(--sp-1); font-size: var(--fs-24);
+  color: var(--gold-bright); font-weight: var(--fw-semibold);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight); letter-spacing: -0.02em;
 }
-.risk-row:hover { border-color: var(--line-bright); }
-.risk-main strong { display: block; font-size: 0.88rem; color: var(--text-strong); }
-.risk-main small { display: block; margin-top: 0.18rem; font-size: 0.72rem; color: var(--text-faint); }
+.stat.hi strong { color: var(--cinnabar); }
+/* 列表用连续行而非带间隙的卡片：扫读时行与行要能直接比对 */
+.risk-list {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); overflow: auto;
+}
+.risk-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: center;
+  min-height: 48px; padding: var(--sp-2) var(--sp-4);
+  border-top: 1px solid var(--line); text-align: left; color: inherit;
+  transition: background var(--dur-fast);
+}
+.risk-row:first-of-type { border-top: none; }
+.risk-row:hover { background: var(--gold-soft); }
+.risk-main strong { display: block; font-size: var(--fs-13); color: var(--text-strong); font-weight: var(--fw-regular); }
+.risk-main small { display: block; margin-top: 1px; font-size: var(--fs-11); color: var(--text-mute); }
 </style>

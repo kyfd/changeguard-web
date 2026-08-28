@@ -19,9 +19,9 @@ withDefaults(defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: var(--sp-2);
   border-radius: var(--r);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   letter-spacing: 0;
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
   overflow: hidden;
@@ -29,11 +29,11 @@ withDefaults(defineProps<{
 }
 .nb:disabled { opacity: 0.58; cursor: not-allowed; }
 .nb:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
-.nb-sm { padding: 0.36rem 0.82rem; font-size: 0.8rem; }
-.nb-md { padding: 0.54rem 1.1rem; font-size: 0.88rem; }
-.nb-lg { padding: 0; font-size: 0.95rem; height: 48px; }
-.nb-block { width: 100%; }
-.nb-content { display: inline-flex; align-items: center; gap: 0.45rem; }
+/* 固定高度而非 padding 撑开：同一行里的按钮/输入框/选择器必须严格等高 */
+.nb-sm { height: 28px; padding: 0 var(--sp-3); font-size: var(--fs-12); }
+.nb-md { height: 32px; padding: 0 var(--sp-4); font-size: var(--fs-13); }
+.nb-lg { height: 40px; padding: 0 var(--sp-5); font-size: var(--fs-14); }
+.nb-content { display: inline-flex; align-items: center; gap: var(--sp-2); }
 
 .nb-primary {
   background: var(--primary-grad);

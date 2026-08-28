@@ -32,9 +32,10 @@ function tone(v: string): { c: string; label: string } {
 </template>
 
 <style scoped>
-.badge { display: inline-flex; align-items: center; gap: .45em; border-radius: var(--r-sm); white-space: nowrap; line-height: 1; letter-spacing: 0; font-weight: 500; }
-.badge-sm { font-size: .78rem; padding: .28em .65em; }
-.badge-md { font-size: .84rem; padding: .34em .75em; }
+.badge { display: inline-flex; align-items: center; gap: var(--sp-1); border-radius: var(--r-sm); white-space: nowrap; line-height: 1; letter-spacing: 0; font-weight: var(--fw-medium); }
+/* 固定高度：徽章在表格单元格里必须与同行文本基线稳定对齐 */
+.badge-sm { height: 20px; font-size: var(--fs-11); padding: 0 var(--sp-2); }
+.badge-md { height: 24px; font-size: var(--fs-12); padding: 0 var(--sp-2); }
 .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 
 .badge-ok { color: var(--jade-bright); background: var(--jade-soft); border: 1px solid rgba(111,155,122,.28); }

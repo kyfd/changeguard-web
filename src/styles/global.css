@@ -27,13 +27,15 @@ body::before {
   pointer-events: none;
 }
 
-h1, h2, h3, h4 { color: var(--text-strong); font-weight: 600; line-height: 1.35; font-family: var(--font-sans); }
-h1 { font-size: 1.35rem; letter-spacing: -0.01em; }
-h2 { font-size: 1.12rem; letter-spacing: -0.005em; }
-h3 { font-size: 1rem; }
+h1, h2, h3, h4 { color: var(--text-strong); font-weight: var(--fw-semibold); line-height: var(--lh-tight); font-family: var(--font-sans); }
+h1 { font-size: var(--fs-24); letter-spacing: -0.01em; }
+h2 { font-size: var(--fs-20); letter-spacing: -0.005em; }
+h3 { font-size: var(--fs-16); }
 a { color: var(--brand-bright); text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-input, textarea, select { font-family: inherit; color: inherit; }
+/* 表单控件不继承 font-size 会退回 UA 默认的 13.3333px，是全站小数字号的主要来源 */
+button, input, textarea, select { font-family: inherit; font-size: inherit; line-height: inherit; }
+button { cursor: pointer; border: none; background: none; color: inherit; }
+input, textarea, select { color: inherit; }
 ul, ol { list-style: none; }
 img, svg { display: block; max-width: 100%; }
 

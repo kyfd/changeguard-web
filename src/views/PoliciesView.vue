@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { api } from '@/api/client'
 import TechIcon from '@/components/TechIcon.vue'
-import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
 
 const ws = useWorkspaceStore()
@@ -36,7 +35,6 @@ async function toggle(id: string) {
         <span>说明</span>
         <span>等级</span>
         <span>状态</span>
-        <span></span>
       </div>
       <article v-for="p in ws.policies" :key="p.id" class="row" :class="{ off: p.enabled === false }">
         <div class="name">
@@ -45,10 +43,21 @@ async function toggle(id: string) {
         </div>
         <p>{{ p.description || p.pattern || '暂无说明' }}</p>
         <span class="sev" :class="'sv-' + String(p.severity || '').toLowerCase()">{{ sevLabel[String(p.severity || '').toUpperCase()] || p.severity || '—' }}</span>
-        <StatusBadge type="status" :value="p.enabled !== false ? 'OK' : 'PENDING'" size="sm">{{ p.enabled !== false ? '启用' : '停用' }}</StatusBadge>
-        <NeonButton :variant="p.enabled !== false ? 'subtle' : 'primary'" size="sm" :loading="busy[p.id]" @click="toggle(p.id)">
-          {{ p.enabled !== false ? '停用' : '启用' }}
-        </NeonButton>
+        <!-- 状态与操作合成一个开关：此前徽章显示「启用」、旁边按钮显示「停用」，
+             同一行并排出现两个相反的词，读起来自相矛盾。 -->
+        <button
+          type="button"
+          class="sw"
+          :class="{ on: p.enabled !== false, busy: busy[p.id] }"
+          :disabled="busy[p.id]"
+          role="switch"
+          :aria-checked="p.enabled !== false"
+          :title="p.enabled !== false ? '点击停用' : '点击启用'"
+          @click="toggle(p.id)"
+        >
+          <i class="sw-track"><em></em></i>
+          <span class="sw-text">{{ p.enabled !== false ? '启用' : '停用' }}</span>
+        </button>
       </article>
     </div>
   </div>
@@ -68,19 +77,21 @@ async function toggle(id: string) {
 .ledger-head,
 .row {
   display: grid;
-  grid-template-columns: minmax(9rem, 0.9fr) minmax(0, 1.5fr) 4.2rem 4.6rem auto;
-  gap: 1rem;
+  grid-template-columns: minmax(144px, 0.9fr) minmax(0, 1.5fr) 68px 88px;
+  gap: var(--sp-4);
   align-items: center;
-  padding: 0.95rem 1.25rem;
+  padding: var(--sp-3) var(--sp-4);
 }
 .ledger-head {
-  font-size: 0.74rem;
-  color: var(--text-faint);
-  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-12);
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--line-strong);
   position: sticky;
   top: 0;
-  background: var(--surface);
+  background: var(--surface-2);
   z-index: 1;
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-2);
 }
 .row { border-top: 1px solid var(--line); min-width: 0; }
 .row:first-of-type { border-top: none; }
@@ -89,19 +100,19 @@ async function toggle(id: string) {
 .name { min-width: 0; }
 .name h3 {
   margin: 0;
-  font-size: 1.02rem;
-  font-weight: 500;
+  font-size: var(--fs-13);
+  font-weight: var(--fw-medium);
   color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.name small { display: block; margin-top: 0.2rem; }
+.name small { display: block; margin-top: 1px; font-size: var(--fs-11); }
 .row p {
   margin: 0;
-  font-size: 0.84rem;
+  font-size: var(--fs-12);
   color: var(--text-mute);
-  line-height: 1.5;
+  line-height: var(--lh-snug);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -109,18 +120,41 @@ async function toggle(id: string) {
   min-width: 0;
 }
 .sev {
-  font-size: 0.8rem;
+  font-size: var(--fs-12);
   white-space: nowrap;
 }
 .sv-high { color: var(--cinnabar); }
 .sv-medium { color: var(--amber); }
 .sv-low { color: var(--jade); }
 
+/* 开关本身即状态显示，无需额外徽章 */
+.sw {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  color: var(--text-mute); font-size: var(--fs-12);
+}
+.sw-track {
+  position: relative; width: 26px; height: 15px; flex: none;
+  border-radius: var(--r-pill); background: var(--line-strong);
+  transition: background var(--dur-fast);
+}
+.sw-track em {
+  position: absolute; top: 2px; left: 2px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.sw.on .sw-track { background: var(--jade); }
+.sw.on .sw-track em { transform: translateX(11px); }
+.sw.on .sw-text { color: var(--text); }
+.sw.busy { opacity: 0.5; cursor: progress; }
+.sw:not(.busy):hover .sw-track { background: var(--text-faint); }
+.sw.on:not(.busy):hover .sw-track { background: color-mix(in srgb, var(--jade) 80%, #000); }
+
 @media (max-width: 900px) {
   .ledger-head { display: none; }
   .row {
     grid-template-columns: 1fr auto;
-    gap: 0.4rem 0.8rem;
+    gap: var(--sp-1) var(--sp-3);
   }
   .row p { grid-column: 1 / -1; }
 }

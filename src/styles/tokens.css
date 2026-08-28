@@ -56,7 +56,9 @@
   --text: #c8d2df;
   --text-strong: #f1f5fa;
   --text-mute: #8593a5;
-  --text-faint: #626f80;
+  /* #626f80 在卡片底 #131922 上仅 3.45:1，低于 AA 4.5:1；
+     浅色主题此前有同样缺陷，两边一并提亮到达标。 */
+  --text-faint: #7c8a9c;
   --text-inverse: #ffffff;
 
   /* Signal blue: legible on graphite, unmistakably enterprise */
@@ -118,6 +120,41 @@
   --r-xl: 12px;
   --r-pill: 999px;
 
+  /* ── Type scale: integer px steps ──────────────────────────
+     rem-with-decimals renders 13.76px / 14.72px / 21.6px — values
+     that are each slightly off. Fixed steps are what make a console
+     look engineered rather than approximated. */
+  --fs-11: 11px;   /* dense metadata, table sub-labels */
+  --fs-12: 12px;   /* captions, column headers */
+  --fs-13: 13px;   /* secondary body */
+  --fs-14: 14px;   /* body — default reading size */
+  --fs-16: 16px;   /* card titles, section headers */
+  --fs-20: 20px;   /* page title */
+  --fs-24: 24px;   /* KPI values */
+  --fs-32: 32px;   /* hero metrics */
+
+  /* Line heights paired to the steps above, kept on whole px */
+  --lh-tight: 1.25;
+  --lh-snug: 1.4;
+  --lh-base: 1.5;
+
+  /* Weights: 3 stops only. More than three reads as indecision. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* ── Space scale: 4px base grid ────────────────────────────
+     Every gap, pad and margin resolves to a multiple of 4. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
   --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-display: var(--font-sans);
   --font-brand: "Space Grotesk", var(--font-sans);
@@ -171,7 +208,9 @@
   --text: #2b3542;
   --text-strong: #101720;
   --text-mute: #5c6b7c;
-  --text-faint: #8593a5;
+  /* #8593a5 在页底 #f4f6f9 上只有 2.89:1，低于 WCAG AA 的 4.5:1。
+     图例、排名、副标题都用这一档，浅色下会糊掉。 */
+  --text-faint: #626f82;
   --text-inverse: #ffffff;
 
   --brand: #1f5fd0;

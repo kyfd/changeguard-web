@@ -116,7 +116,7 @@ function hexRgb(hex: string): [number, number, number] {
 
 function posOf(n: NodeDef, t: number, cx: number, cy: number, rx: number, ry: number) {
   const ang = n.a0 + (reduced ? 0 : t * PERIODS[Math.min(n.ring, PERIODS.length - 1)])
-  const m = props.expand ? [0.20, 0.40, 0.64, 0.90] : [0.22, 0.38, 0.56, 0.74]
+  const m = props.expand ? [0.34, 0.52, 0.72, 0.92] : [0.22, 0.38, 0.56, 0.74]
   const k = m[n.ring] ?? 0.9
   return { x: cx + Math.cos(ang) * rx * k, y: cy + Math.sin(ang) * ry * k, n }
 }
@@ -128,11 +128,11 @@ function drawAperture(c: CanvasRenderingContext2D, x: number, y: number, r: numb
   c.translate(x, y)
   const bloom = c.createRadialGradient(0, 0, 0, 0, 0, R * 4.2)
   bloom.addColorStop(0, `rgba(${ir},${ig},${ib},0.48)`)
-  bloom.addColorStop(0.35, `rgba(${ir},${ig},${ib},0.16)`)
+  bloom.addColorStop(0.35, `rgba(${ir},${ig},${ib},0.07)`)
   bloom.addColorStop(1, `rgba(${ir},${ig},${ib},0)`)
   c.fillStyle = bloom
   c.beginPath()
-  c.arc(0, 0, R * 4.2, 0, Math.PI * 2)
+  c.arc(0, 0, R * 3, 0, Math.PI * 2)
   c.fill()
   for (let i = 0; i < 3; i++) {
     c.beginPath()
@@ -173,7 +173,9 @@ function frame(now: number) {
 
   const cx = w * 0.5 + px
   const cy = h * (props.expand ? 0.52 : 0.46) + py
-  const rx = props.expand ? w * 0.48 : Math.min(w, h) * 0.42
+  // 两侧各有 268px 信息面板，横向半径需退让否则外圈节点标签被压住
+  const inset = props.expand ? Math.min(320, w * 0.24) : 0
+  const rx = props.expand ? Math.max(240, (w - inset * 2) * 0.46) : Math.min(w, h) * 0.42
   const ry = props.expand ? h * 0.44 : Math.min(w, h) * 0.38
   const list = nodesNow()
 
@@ -189,7 +191,7 @@ function frame(now: number) {
 
   const rings = 4
   for (let i = 0; i < rings; i++) {
-    const k = props.expand ? [0.20, 0.40, 0.64, 0.90][i] : [0.22, 0.38, 0.56, 0.74][i]
+    const k = props.expand ? [0.34, 0.52, 0.72, 0.92][i] : [0.22, 0.38, 0.56, 0.74][i]
     ctx.beginPath()
     ctx.ellipse(cx, cy, rx * k, ry * k, 0, 0, Math.PI * 2)
     ctx.strokeStyle = ice(0.38 - i * 0.05)
@@ -202,13 +204,19 @@ function frame(now: number) {
   const placed = new Map<string, { x: number; y: number; n: NodeDef }>()
   for (const n of list) placed.set(n.id, posOf(n, t, cx, cy, rx, ry))
 
+  // 辐条只画靠近节点的一段：整条连到中心会让 20+ 条线交叉铺满画面，
+  // 既不表达真实依赖，又盖住节点标签。
   for (const n of list) {
     const p = placed.get(n.id)!
+    const dx = p.x - cx
+    const dy = p.y - cy
+    const len = Math.hypot(dx, dy) || 1
+    const stub = Math.min(0.34, 26 / len + 0.16)
     ctx.beginPath()
-    ctx.moveTo(cx, cy)
+    ctx.moveTo(p.x - dx * stub, p.y - dy * stub)
     ctx.lineTo(p.x, p.y)
-    ctx.strokeStyle = ice(n.ring >= 2 ? 0.18 : 0.28)
-    ctx.lineWidth = 1.2
+    ctx.strokeStyle = ice(n.ring >= 2 ? 0.12 : 0.2)
+    ctx.lineWidth = 1
     ctx.stroke()
   }
 
@@ -219,8 +227,8 @@ function frame(now: number) {
     ctx.beginPath()
     ctx.moveTo(pa.x, pa.y)
     ctx.lineTo(pb.x, pb.y)
-    ctx.strokeStyle = ice(0.42)
-    ctx.lineWidth = 1.45
+    ctx.strokeStyle = ice(0.22)
+    ctx.lineWidth = 1
     ctx.stroke()
   }
 

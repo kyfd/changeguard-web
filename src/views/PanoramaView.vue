@@ -8,7 +8,7 @@ import ChangeLattice from '@/components/ChangeLattice.vue'
 
 const pano = usePanorama()
 const {
-  ws, total, risks, highRisk, appRanking, topRules,
+  ws, total, risks, highRisk, appRanking, topRules, flow,
   pending, closed, experiments, enabledPolicies, threat, closureRate,
 } = pano
 const router = useRouter()
@@ -57,19 +57,33 @@ const highN = useCountUp(() => highRisk.value)
 const closureN = useCountUp(() => closureRate.value)
 const svcN = useCountUp(() => ws.apps?.length || 0)
 
+/* 每个节点必须绑定互不重复的指标：此前 audit/evidence、svc/k8s、
+   rollback/pass、approve/gate 四对各自渲染同一个数字，等于把一个事实画了两遍。 */
+const findingsTotal = computed(() =>
+  (ws.changes || []).reduce((n: number, c: any) => n + (c.findings?.length || 0), 0),
+)
+const blockingTotal = computed(() =>
+  (ws.changes || []).reduce(
+    (n: number, c: any) => n + (c.findings || []).filter((f: any) => f.blocking).length,
+    0,
+  ),
+)
+const draftCount = computed(() => (ws.changes || []).filter((c: any) => c.status === 'DRAFT').length)
+const rejectedCount = computed(() => (ws.changes || []).filter((c: any) => c.status === 'REJECTED').length)
+
 const latticeValues = computed(() => ({
   rule: ws.policies?.length || 0,
   verify: experiments.value,
   approve: pending.value,
   audit: ws.audits?.length || 0,
-  rollback: closed.value,
+  rollback: rejectedCount.value,
   svc: ws.apps?.length || 0,
   sql: highRisk.value,
-  k8s: ws.apps?.length || 0,
+  k8s: draftCount.value,
   cfg: enabledPolicies.value,
   api: total.value,
-  evidence: ws.audits?.length || 0,
-  gate: pending.value,
+  evidence: findingsTotal.value,
+  gate: blockingTotal.value,
   pass: closed.value,
 }))
 
@@ -96,6 +110,24 @@ const NODE_ROUTE: Record<string, string> = {
 
 function go(route: string) { router.push({ name: route }) }
 function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
+
+/* 漏斗最大阶段决定横条比例；这是全景真正要回答的问题：变更卡在哪一环。 */
+const flowMax = computed(() => Math.max(1, ...flow.value.map(s => s.count)))
+const bottleneck = computed(() => {
+  const open = flow.value.filter(s => s.label !== '已闭环')
+  return open.reduce((a, b) => (b.count > a.count ? b : a), open[0])
+})
+const riskMix = computed(() => {
+  const order = [
+    { key: 'HIGH', label: '高危', tone: 'red' },
+    { key: 'MEDIUM', label: '中危', tone: 'amber' },
+    { key: 'LOW', label: '低危', tone: 'green' },
+    { key: 'UNKNOWN', label: '未评', tone: 'mute' },
+  ]
+  const t = Math.max(1, total.value)
+  return order.map(o => ({ ...o, count: risks.value[o.key] || 0, pct: Math.round((risks.value[o.key] || 0) / t * 100) }))
+})
+const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count)))
 </script>
 
 <template>
@@ -134,6 +166,48 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
       <button type="button" @click="go('changes')"><span>闭环</span><b>{{ closureN }}%</b></button>
       <button type="button" @click="go('apps')"><span>服务</span><b>{{ svcN }}</b></button>
     </div>
+
+    <!-- 治理漏斗：全景要回答的首要问题是「变更卡在哪一环」，
+         此前这份数据（flow）已存在于 composable 却从未被渲染。 -->
+    <section class="panel flow-panel">
+      <header>
+        <span>变更流转</span>
+        <em v-if="bottleneck && bottleneck.count">积压在「{{ bottleneck.label }}」</em>
+      </header>
+      <button
+        v-for="s in flow"
+        :key="s.label"
+        type="button"
+        class="flow-row"
+        :class="{ peak: bottleneck && s.label === bottleneck.label && s.count > 0 }"
+        @click="go(s.route)"
+      >
+        <span class="flow-label">{{ s.label }}</span>
+        <span class="flow-track"><i :style="{ width: (s.count / flowMax * 100) + '%' }"></i></span>
+        <b :class="{ zero: !s.count }">{{ s.count }}</b>
+      </button>
+    </section>
+
+    <!-- 风险构成 + 服务排名：把 risks / appRanking 这两份闲置数据用起来 -->
+    <section class="panel side-panel">
+      <header><span>风险构成</span></header>
+      <div class="mix">
+        <i v-for="m in riskMix" :key="m.key" :class="'seg t-' + m.tone" :style="{ flexGrow: m.count || 0 }"></i>
+      </div>
+      <ul class="legend">
+        <li v-for="m in riskMix" :key="m.key">
+          <i :class="'dot t-' + m.tone"></i><span>{{ m.label }}</span><b>{{ m.count }}</b>
+        </li>
+      </ul>
+      <header class="sub"><span>变更最多的服务</span></header>
+      <ul class="rank">
+        <li v-for="a in appRanking.slice(0, 4)" :key="a.name">
+          <span class="ellipsis">{{ a.name }}</span>
+          <i class="bar"><em :style="{ width: (a.count / appMax * 100) + '%' }"></em></i>
+          <b>{{ a.count }}</b>
+        </li>
+      </ul>
+    </section>
 
     <ul v-if="topRules.length" class="hits">
       <li class="hits-head mono">高频命中规则</li>
@@ -207,33 +281,34 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.05rem 1.4rem 0;
+  padding: var(--sp-4) var(--sp-5) 0;
   pointer-events: none;
 }
-.hud-brand, .hud-actions { display: flex; align-items: center; gap: 0.75rem; pointer-events: auto; }
+.hud-brand, .hud-actions { display: flex; align-items: center; gap: var(--sp-3); pointer-events: auto; }
 .hud-brand strong {
-  font-size: 1.15rem;
-  font-weight: 650;
+  font-size: var(--fs-16);
+  font-weight: var(--fw-semibold);
   color: var(--text-strong);
 }
-.hud-brief { font-size: 0.82rem; color: var(--text-mute); }
-.hud-actions time { font-size: 0.84rem; color: var(--text-mute); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.hud-brief { font-size: var(--fs-12); color: var(--text-mute); }
+.hud-actions time { font-size: var(--fs-12); color: var(--text-mute); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
 .exit {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.38rem 0.75rem;
+  gap: var(--sp-1);
+  height: 28px;
+  padding: 0 var(--sp-3);
   border-radius: var(--r);
   border: 1px solid var(--line);
   color: var(--brand-bright);
-  font-size: 0.8rem;
+  font-size: var(--fs-12);
   background: var(--surface);
 }
 .exit:hover { border-color: var(--line-bright); }
 
 .stats {
   position: absolute;
-  top: 3.6rem;
+  top: var(--sp-12);
   left: 50%;
   transform: translateX(-50%);
   z-index: 4;
@@ -248,65 +323,132 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 2px;
   color: inherit;
-  min-width: 5.4rem;
-  padding: 0.5rem 0.9rem;
+  min-width: 86px;
+  padding: var(--sp-2) var(--sp-3);
   border-left: 1px solid var(--line);
 }
 .stats button:first-child { border-left: 0; }
 .stats button:hover { background: var(--bg-elev); }
-.stats span { font-size: 0.68rem; color: var(--text-mute); }
+.stats span { font-size: var(--fs-11); color: var(--text-mute); }
 .stats b {
-  font-size: 1.25rem;
-  font-weight: 650;
+  font-size: var(--fs-20);
+  font-weight: var(--fw-semibold);
   color: var(--brand-bright);
   font-variant-numeric: tabular-nums;
   font-family: var(--font-mono);
-  line-height: 1.1;
+  line-height: var(--lh-tight);
 }
 .stats .warn b { color: var(--cinnabar); }
 /* 与工作台一致：零值不抢视觉重心 */
 .stats .mute b { color: var(--text-faint); }
 
+/* 左右两侧信息面板：图谱是背景，数据是主体 */
+.panel {
+  position: absolute;
+  z-index: 4;
+  width: 268px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+.panel > header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-11); letter-spacing: 0.04em; color: var(--text-mute);
+}
+.panel > header em { font-style: normal; color: var(--cinnabar); font-size: var(--fs-11); }
+.panel > header.sub { border-top: 1px solid var(--line); }
+
+.flow-panel { left: var(--sp-5); top: 96px; }
+.flow-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 64px 1fr 28px;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 32px;
+  padding: 0 var(--sp-3);
+  color: inherit;
+  text-align: left;
+  border-top: 1px solid var(--line);
+}
+.flow-row:first-of-type { border-top: 0; }
+.flow-row:hover { background: var(--bg-elev); }
+.flow-label { font-size: var(--fs-12); color: var(--text-mute); }
+.flow-track { height: 6px; border-radius: 3px; background: var(--bg-elev); overflow: hidden; }
+.flow-track i { display: block; height: 100%; background: var(--brand); border-radius: 3px; transition: width var(--dur) var(--ease); }
+/* 瓶颈阶段是这页的结论，必须比其他阶段更重 */
+.flow-row.peak .flow-track i { background: var(--cinnabar); }
+.flow-row.peak .flow-label { color: var(--text-strong); }
+.flow-row.peak b { color: var(--cinnabar); }
+.flow-row b {
+  font-size: var(--fs-13); font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; text-align: right; color: var(--text);
+}
+.flow-row b.zero { color: var(--text-faint); }
+
+.side-panel { right: var(--sp-5); top: 96px; }
+.mix { display: flex; height: 8px; margin: var(--sp-3) var(--sp-3) var(--sp-2); border-radius: 4px; overflow: hidden; background: var(--bg-elev); }
+.mix .seg { min-width: 0; }
+.t-red { background: var(--cinnabar); }
+.t-amber { background: var(--gold); }
+.t-green { background: var(--jade, #3f9d6d); }
+.t-mute { background: var(--line-strong); }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 2px var(--sp-3); padding: 0 var(--sp-3) var(--sp-3); }
+.legend li { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-11); color: var(--text-mute); }
+.legend .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.legend b { margin-left: auto; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.rank { padding: var(--sp-2) var(--sp-3) var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.rank li { display: grid; grid-template-columns: 1fr 56px 20px; align-items: center; gap: var(--sp-2); font-size: var(--fs-11); color: var(--text-mute); }
+.rank .bar { height: 4px; border-radius: 2px; background: var(--bg-elev); overflow: hidden; }
+.rank .bar em { display: block; height: 100%; background: var(--brand); border-radius: 2px; }
+.rank b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--text); }
+
 .hits {
   position: absolute;
-  right: 1.3rem;
-  bottom: 2.6rem;
+  right: var(--sp-5);
+  bottom: var(--sp-8);
   z-index: 4;
-  width: 264px;
+  width: 268px;
   display: flex;
   flex-direction: column;
   gap: 0;
   border: 1px solid var(--line);
   border-radius: var(--r);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(6px);
   overflow: hidden;
 }
 .hits-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-11);
+  letter-spacing: 0.04em;
   color: var(--text-mute);
-  padding: 0.5rem 0.6rem;
+  padding: var(--sp-2) var(--sp-3);
   background: var(--bg-elev);
   border-bottom: 1px solid var(--line);
 }
 .hits li:not(.hits-head) {
   display: grid;
-  grid-template-columns: 1.4rem 1fr auto;
-  gap: 0.4rem;
+  grid-template-columns: 20px 1fr auto;
+  gap: var(--sp-2);
   align-items: center;
-  padding: 0.48rem 0.6rem;
+  padding: var(--sp-2) var(--sp-3);
   border-top: 1px solid var(--line);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
 }
 .hits li:not(.hits-head):first-of-type { border-top: 0; }
 .hits li:not(.hits-head):hover { background: var(--bg-elev); }
-.hits em { color: var(--text-faint); font-size: 0.68rem; font-style: normal; font-family: var(--font-mono); }
+.hits em { color: var(--text-faint); font-size: var(--fs-11); font-style: normal; font-family: var(--font-mono); }
 .hits span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .hits b { color: var(--cinnabar); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
@@ -314,19 +456,22 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0.85rem;
+  bottom: var(--sp-3);
   z-index: 4;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: var(--fs-11);
   color: var(--text-faint);
   letter-spacing: 0.04em;
   pointer-events: none;
 }
 
+@media (max-width: 1280px) {
+  .side-panel { display: none; }
+}
 @media (max-width: 780px) {
-  .hud { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+  .hud { flex-direction: column; align-items: flex-start; gap: var(--sp-2); }
   .hud-brief { display: none; }
-  .stats { top: 5.4rem; gap: 0.9rem; padding: 0.4rem 0.8rem; }
-  .hits { display: none; }
+  .stats { top: 84px; }
+  .hits, .flow-panel { display: none; }
 }
 </style>

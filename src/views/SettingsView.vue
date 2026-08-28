@@ -88,19 +88,21 @@ onMounted(load)
 
 <style scoped>
 @import './page.css';
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; align-content: start; }
-.spanel { padding: 1.25rem 1.3rem; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: .8rem; }
-.spanel h3 { display: flex; align-items: center; gap: .5rem; font-size: .98rem; color: var(--text-strong); font-weight: 500; }
+/* 卡片按内容定高：页面级 flex 拉伸会把四张卡撑成等高，
+   内容只占上半、下半留白，反而显得空。 */
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-3); align-content: start; align-items: start; }
+.spanel { padding: var(--sp-4); border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: var(--sp-3); }
+.spanel h3 { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-medium); }
 .spanel h3 i { width: 2px; height: 14px; background: var(--gold); border-radius: 1px; }
-.sfield { display: flex; flex-direction: column; gap: .3rem; font-size: .78rem; color: var(--text-mute); }
-.sfield input { padding: .55rem .8rem; border-radius: var(--r); background: var(--bg-void); border: 1px solid var(--line); color: var(--text); outline: none; }
+.sfield { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-12); color: var(--text-mute); }
+.sfield input { height: 32px; padding: 0 var(--sp-3); border-radius: var(--r); background: var(--bg-void); border: 1px solid var(--line); color: var(--text); outline: none; font-size: var(--fs-13); }
 .sfield input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
-.ints { display: flex; flex-direction: column; gap: .5rem; }
-.int-row { display: flex; align-items: center; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid var(--line); font-size: .82rem; }
+.ints { display: flex; flex-direction: column; gap: var(--sp-2); }
+.int-row { display: flex; align-items: center; justify-content: space-between; min-height: 32px; padding: var(--sp-1) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
 .int-name { font-family: var(--font-mono); color: var(--text-mute); text-transform: capitalize; }
-.acct { display: flex; align-items: center; gap: .8rem; }
-.acct-avatar { width: 44px; height: 44px; border-radius: 6px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold-bright); font-weight: 600; border: 1px solid var(--line-bright); }
+.acct { display: flex; align-items: center; gap: var(--sp-3); }
+.acct-avatar { width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center; background: var(--gold-soft); color: var(--gold-bright); font-weight: var(--fw-semibold); border: 1px solid var(--line-bright); }
 .theme-seg { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; padding: 3px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-glass); }
-.theme-seg button { padding: 0.5rem 0.3rem; border-radius: 6px; font-size: 0.8rem; color: var(--text-mute); }
+.theme-seg button { height: 28px; border-radius: var(--r-sm); font-size: var(--fs-12); color: var(--text-mute); }
 .theme-seg button.on { background: var(--bg-elev); color: var(--text-strong); border: 1px solid var(--line); }
 </style>
