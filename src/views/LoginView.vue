@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useWorkspaceStore } from '@/stores/workspace'
 import TechIcon from '@/components/TechIcon.vue'
@@ -27,13 +27,76 @@ const actionLabel = computed(() =>
   mode.value === 'login' ? '进入系统' : mode.value === 'register' ? '创建并进入' : '加入工作空间',
 )
 
-const stages = [
-  { label: '变更提交', state: 'done', meta: 'CHG-4821' },
-  { label: '静态校验', state: 'done', meta: '12 项通过' },
-  { label: '风险评级', state: 'risk', meta: 'HIGH · 索引重建' },
-  { label: '独立审批', state: 'idle', meta: '等待复核' },
-  { label: '进入生产', state: 'idle', meta: '门禁未放行' },
+/* 登录页无法读取真实工单（未认证），此处为门禁流程的循环演示 */
+type Phase = 'idle' | 'run' | 'pass' | 'block'
+
+const STAGES = [
+  { label: '变更提交', pending: '等待提交', active: '接收变更单', settled: 'CHG-4821' },
+  { label: '静态校验', pending: '尚未开始', active: '解析 DDL…', settled: '12 项通过' },
+  { label: '风险评级', pending: '尚未评级', active: '比对规则…', settled: 'HIGH · 索引重建' },
+  { label: '独立审批', pending: '等待复核', active: '通知审批人…', settled: '已拦截' },
+  { label: '进入生产', pending: '门禁未放行', active: '', settled: '门禁未放行' },
 ]
+
+const BLOCK_AT = 2 // 风险评级判定为高危，门禁在此拦截
+
+const cursor = ref(-1)
+const phase = ref<Phase>('idle')
+const reduceMotion =
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const steps = computed(() =>
+  STAGES.map((s, i) => {
+    if (reduceMotion) {
+      const st = i < BLOCK_AT ? 'pass' : i === BLOCK_AT ? 'block' : 'idle'
+      return { ...s, state: st as Phase, meta: i <= BLOCK_AT ? s.settled : s.pending }
+    }
+    if (i > cursor.value) return { ...s, state: 'idle' as Phase, meta: s.pending }
+    if (i === cursor.value) {
+      const meta = phase.value === 'run' ? s.active || s.pending : s.settled
+      return { ...s, state: phase.value, meta }
+    }
+    return { ...s, state: (i < BLOCK_AT ? 'pass' : 'block') as Phase, meta: s.settled }
+  }),
+)
+
+const blocked = computed(() => cursor.value >= BLOCK_AT)
+
+/* 导轨生长到当前节点：每步占 1/5，节点位于该步中部 */
+const progress = computed(() => {
+  if (reduceMotion) return (BLOCK_AT + 0.5) / STAGES.length
+  if (cursor.value < 0) return 0
+  return Math.min((cursor.value + 0.5) / STAGES.length, 1)
+})
+
+let timer: ReturnType<typeof setTimeout> | undefined
+function schedule(fn: () => void, ms: number) {
+  timer = setTimeout(fn, ms)
+}
+
+function advance() {
+  if (cursor.value >= BLOCK_AT + 1) {
+    // 停在拦截态，让用户看清结论，然后重来
+    schedule(() => {
+      cursor.value = -1
+      phase.value = 'idle'
+      advance()
+    }, 4200)
+    return
+  }
+  cursor.value += 1
+  phase.value = 'run'
+  schedule(() => {
+    phase.value = cursor.value < BLOCK_AT ? 'pass' : 'block'
+    schedule(advance, cursor.value === BLOCK_AT ? 1500 : 620)
+  }, 900)
+}
+
+onMounted(() => {
+  if (reduceMotion) return
+  schedule(advance, 500)
+})
+onBeforeUnmount(() => clearTimeout(timer))
 
 async function submit() {
   if (loading.value) return
@@ -76,16 +139,26 @@ async function submit() {
         <p class="lede">高危节点会亮起来 · 过不了门禁就进不了生产</p>
       </div>
 
-      <ol class="pipe" aria-label="变更门禁流程示意">
-        <li v-for="s in stages" :key="s.label" :class="['pipe-step', s.state]">
+      <ol
+        class="pipe"
+        :class="{ blocked }"
+        :style="{ '--progress': progress }"
+        aria-label="变更门禁流程演示"
+      >
+        <li v-for="s in steps" :key="s.label" :class="['pipe-step', s.state]">
           <span class="pipe-node" aria-hidden="true"></span>
           <span class="pipe-label">{{ s.label }}</span>
-          <span class="pipe-meta mono">{{ s.meta }}</span>
+          <transition name="meta" mode="out-in">
+            <span class="pipe-meta mono" :key="s.meta">{{ s.meta }}</span>
+          </transition>
         </li>
       </ol>
 
-      <footer class="aside-foot mono">
-        <span class="live" aria-hidden="true"></span>治理引擎在线
+      <footer class="aside-foot mono" :class="{ halted: blocked }">
+        <span class="live" aria-hidden="true"></span>
+        <transition name="meta" mode="out-in">
+          <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '治理引擎在线' }}</span>
+        </transition>
       </footer>
     </section>
 
@@ -234,9 +307,33 @@ async function submit() {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-left: 1px solid var(--line);
   padding-left: 1.4rem;
 }
+/* 静态导轨 */
+.pipe::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+/* 进度导轨：随流程推进向下生长 */
+.pipe::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: calc(var(--progress, 0) * 100%);
+  background: linear-gradient(180deg, var(--jade), var(--jade));
+  transition: height 0.62s var(--ease), background 0.4s var(--ease);
+}
+.pipe.blocked::after {
+  background: linear-gradient(180deg, var(--jade) 45%, var(--cinnabar) 100%);
+}
+
 .pipe-step {
   position: relative;
   display: grid;
@@ -245,8 +342,11 @@ async function submit() {
   gap: 0.5rem 1rem;
   padding: 0.72rem 0;
   border-bottom: 1px solid var(--line);
+  transition: opacity 0.4s var(--ease);
 }
 .pipe-step:last-child { border-bottom: none; }
+.pipe-step.idle { opacity: 0.42; }
+
 .pipe-node {
   position: absolute;
   left: calc(-1.4rem - 4px);
@@ -256,20 +356,50 @@ async function submit() {
   border-radius: var(--r-xs);
   background: var(--bg-deep);
   border: 1px solid var(--text-faint);
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
-.pipe-label { font-size: 0.92rem; color: var(--text-mute); }
-.pipe-meta { font-size: 0.74rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.pipe-label {
+  font-size: 0.92rem;
+  color: var(--text-mute);
+  transition: color 0.3s var(--ease);
+}
+.pipe-meta {
+  font-size: 0.74rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
 
-.pipe-step.done .pipe-node { background: var(--jade); border-color: var(--jade); }
-.pipe-step.done .pipe-label { color: var(--text); }
+/* 校验中 */
+.pipe-step.run .pipe-node {
+  background: var(--brand);
+  border-color: var(--brand);
+  animation: pulse 1.1s var(--ease) infinite;
+}
+.pipe-step.run .pipe-label { color: var(--text-strong); }
+.pipe-step.run .pipe-meta { color: var(--brand-bright); }
 
-.pipe-step.risk .pipe-node {
+/* 通过 */
+.pipe-step.pass .pipe-node { background: var(--jade); border-color: var(--jade); }
+.pipe-step.pass .pipe-label { color: var(--text); }
+
+/* 拦截 */
+.pipe-step.block .pipe-node {
   background: var(--cinnabar);
   border-color: var(--cinnabar);
   box-shadow: 0 0 0 4px var(--cinnabar-soft);
 }
-.pipe-step.risk .pipe-label { color: var(--text-strong); font-weight: 600; }
-.pipe-step.risk .pipe-meta { color: var(--cinnabar); }
+.pipe-step.block .pipe-label { color: var(--text-strong); font-weight: 600; }
+.pipe-step.block .pipe-meta { color: var(--cinnabar); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--brand-soft); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+
+/* meta 文案切换 */
+.meta-enter-active, .meta-leave-active { transition: opacity 0.18s var(--ease), transform 0.18s var(--ease); }
+.meta-enter-from { opacity: 0; transform: translateY(-3px); }
+.meta-leave-to { opacity: 0; transform: translateY(3px); }
 
 .aside-foot {
   position: relative;
