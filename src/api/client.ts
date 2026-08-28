@@ -125,7 +125,7 @@ async function soft<T = any>(path: string, fallback: T): Promise<T> {
 }
 
 async function loadPassports(changes: Change[]) {
-  const globalResult = await optional(['/api/gate/passports', '/api/passports', '/api/ci/passports'])
+  const globalResult = await optional(['/api/passports', '/api/gate/passports', '/api/ci/passports'])
   if (globalResult.supported && globalResult.data) {
     const raw: any = globalResult.data
     const items: any[] = listFrom(raw, ['passports', 'items', 'data'])
