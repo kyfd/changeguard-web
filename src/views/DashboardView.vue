@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWorkspaceStore } from '@/stores/workspace'
+import { api } from '@/api/client'
 import TechIcon from '@/components/TechIcon.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
@@ -50,6 +51,58 @@ function open(id: string) { router.push({ name: 'change-detail', params: { id } 
 function openDeck() {
   router.push({ name: 'panorama' })
 }
+
+/* 治理趋势：近 6 个自然月（UTC+8 口径，与审计月报一致）。-1 为"无样本"，显示为— */
+const trends = ref<any[]>([])
+const trendsLoaded = ref(false)
+onMounted(async () => {
+  try {
+    const data = await api.trends(6)
+    trends.value = Array.isArray(data) ? data : (data?.trends || [])
+  } catch { /* 趋势是增强信息，加载失败不打扰工作台 */ }
+  trendsLoaded.value = true
+})
+const hasTrends = computed(() => trendsLoaded.value && trends.value.some((t: any) => (t.submitted || 0) > 0))
+
+function seriesPoints(getter: (t: any) => number | null, width: number, height: number) {
+  const values = trends.value.map(t => getter(t))
+  const valid = values.filter((v): v is number => v != null)
+  if (valid.length === 0) return null
+  const max = Math.max(...valid, 0.0001)
+  const step = trends.value.length > 1 ? width / (trends.value.length - 1) : 0
+  const pts = values.map((v, i) => {
+    if (v == null) return null
+    const x = trends.value.length > 1 ? i * step : width / 2
+    const y = height - (v / max) * (height - 6) - 3
+    return { x, y, v }
+  }).filter(Boolean) as { x: number; y: number; v: number }[]
+  if (pts.length < 1) return null
+  return {
+    line: pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    dots: pts,
+  }
+}
+const submittedBars = computed(() => {
+  const max = Math.max(...trends.value.map((t: any) => t.submitted || 0), 1)
+  return trends.value.map((t: any) => ({
+    label: String(t.month || '').slice(5),
+    done: t.completed || 0, rejected: t.rejected || 0, flying: t.in_flight || 0,
+    total: t.submitted || 0,
+    doneH: (t.completed || 0) / max * 100,
+    rejectedH: (t.rejected || 0) / max * 100,
+    flyingH: (t.in_flight || 0) / max * 100,
+  }))
+})
+const rejectionSeries = computed(() => seriesPoints(t => (t.rejection_rate == null || t.rejection_rate < 0 ? null : t.rejection_rate as number * 100), 100, 40))
+const highRiskSeries = computed(() => seriesPoints(t => (t.high_risk_rate == null || t.high_risk_rate < 0 ? null : t.high_risk_rate as number * 100), 100, 40))
+const approvalSeries = computed(() => seriesPoints(t => (t.approval_hours == null || t.approval_hours < 0 ? null : t.approval_hours as number), 100, 40))
+function lastValue(getter: (t: any) => number | null, unit = '') {
+  for (let i = trends.value.length - 1; i >= 0; i--) {
+    const v = getter(trends.value[i])
+    if (v != null && v >= 0) return unit === '%' ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}${unit}`
+  }
+  return '—'
+}
 </script>
 
 <template>
@@ -88,6 +141,55 @@ function openDeck() {
         <small>已闭环 {{ closed }} / {{ ws.changes.length }}</small>
       </button>
     </div>
+
+    <!-- 治理趋势：仅在有历史数据时出现，空工作台不打扰 -->
+    <section v-if="hasTrends" class="trends">
+      <header>
+        <h3>治理趋势<span class="hint mono">近 {{ trends.length }} 个月 · UTC+8 月口径</span></h3>
+        <span class="legend">
+          <i class="dot brand"></i>已完成 <i class="dot red"></i>已拒绝 <i class="dot gray"></i>推进中
+        </span>
+      </header>
+      <div class="trend-grid">
+        <div class="trend">
+          <div class="kicker">月提交量</div>
+          <div class="bars">
+            <div v-for="b in submittedBars" :key="b.label" class="bar-col" :title="`${b.label} 月：提交 ${b.total}（完成 ${b.done} / 拒绝 ${b.rejected} / 推进中 ${b.flying}）`">
+              <div class="bar-stack">
+                <i class="seg flying" :style="{ height: b.flyingH + '%' }"></i>
+                <i class="seg rejected" :style="{ height: b.rejectedH + '%' }"></i>
+                <i class="seg done" :style="{ height: b.doneH + '%' }"></i>
+              </div>
+              <small class="mono">{{ b.label }}</small>
+            </div>
+          </div>
+        </div>
+        <div class="trend">
+          <div class="kicker">拒绝率（定局口径）</div>
+          <strong class="now mono">{{ lastValue(t => (t.rejection_rate < 0 ? null : t.rejection_rate), '%') }}</strong>
+          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline v-if="rejectionSeries" :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.5" />
+            <circle v-for="(p, i) in rejectionSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--cinnabar)" />
+          </svg>
+        </div>
+        <div class="trend">
+          <div class="kicker">高危占比</div>
+          <strong class="now mono">{{ lastValue(t => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%') }}</strong>
+          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline v-if="highRiskSeries" :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.5" />
+            <circle v-for="(p, i) in highRiskSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--amber)" />
+          </svg>
+        </div>
+        <div class="trend">
+          <div class="kicker">平均决策时长（小时）</div>
+          <strong class="now mono">{{ lastValue(t => (t.approval_hours < 0 ? null : t.approval_hours)) }}</strong>
+          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline v-if="approvalSeries" :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.5" />
+            <circle v-for="(p, i) in approvalSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--brand)" />
+          </svg>
+        </div>
+      </div>
+    </section>
 
     <div class="split">
       <section class="queue">
@@ -154,6 +256,38 @@ function openDeck() {
 /* 零值不该抢占视觉重心：没有待办时降为静默态 */
 .now-card.mute strong { color: var(--text-faint); }
 .now-card:hover { background: var(--bg-elev); }
+
+/* 治理趋势面板：与队列面板同一卡片语言，图表全部内联 SVG/DIV，无图表库 */
+.trends {
+  margin-bottom: var(--sp-3);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card); padding: 14px var(--sp-4) var(--sp-4);
+}
+:root[data-theme="light"] .trends { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
+.trends header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.trends h3 { font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: var(--sp-2); }
+.trends .hint { font-size: var(--fs-11); color: var(--text-faint); font-weight: var(--fw-regular); letter-spacing: 0.04em; }
+.trends .legend { font-size: var(--fs-11); color: var(--text-faint); display: inline-flex; align-items: center; gap: 6px; }
+.trends .legend .dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin: 0 3px 0 8px; }
+.trends .legend .dot:first-child { margin-left: 0; }
+.dot.brand { background: var(--brand); }
+.dot.red { background: var(--cinnabar); }
+.dot.gray { background: var(--line-strong); }
+.trend-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: var(--sp-4); }
+.trend { min-width: 0; }
+.trend .kicker { margin-bottom: 8px; }
+.trend .now { display: block; font-size: var(--fs-20); color: var(--text-strong); font-weight: var(--fw-semibold); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.spark { display: block; width: 100%; height: 44px; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 74px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.bar-stack { flex: 1; width: 100%; max-width: 26px; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 2px; overflow: hidden; background: var(--surface-2); }
+.bar-stack .seg { display: block; width: 100%; }
+.seg.done { background: var(--brand); }
+.seg.rejected { background: var(--cinnabar); }
+.seg.flying { background: var(--line-strong); }
+.bar-col small { font-size: var(--fs-10, 10px); color: var(--text-faint); }
+@media (max-width: 1180px) { .trend-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .trend-grid { grid-template-columns: 1fr; } }
 
 /* 左栏是行动队列（长），右栏是参考轨迹（短），等宽会一边空一边裁 */
 .split { display: grid; grid-template-columns: 3fr 2fr; gap: var(--sp-3); min-height: 0; }

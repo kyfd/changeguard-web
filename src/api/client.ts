@@ -163,6 +163,7 @@ export const api = {
 
   // 核心
   dashboard: () => request<Dashboard>('/api/dashboard'),
+  trends: (months = 6) => request<any[]>(`/api/governance/trends?months=${months}`),
   apps: () => request('/api/apps'),
   users: () => request('/api/users'),
   changes: async (): Promise<Change[]> => listFrom<any>(await request('/api/changes'), ['changes', 'items']).map(normalizeChange),
