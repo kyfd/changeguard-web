@@ -18,6 +18,8 @@ const password = ref('')
 const mode = ref<'login' | 'register' | 'invite'>('login')
 const inviteCode = ref('')
 const name = ref('')
+const orgName = ref('')
+const orgSlug = ref('')
 const loading = ref(false)
 const error = ref('')
 
@@ -110,7 +112,13 @@ async function submit() {
     if (mode.value === 'login') {
       await auth.login(email.value, password.value)
     } else if (mode.value === 'register') {
-      await auth.register({ name: name.value, email: email.value, password: password.value })
+      await auth.register({
+        organization_name: orgName.value.trim(),
+        organization_slug: orgSlug.value.trim().toLowerCase(),
+        name: name.value.trim(),
+        email: email.value,
+        password: password.value,
+      })
       await auth.login(email.value, password.value)
     } else {
       await auth.acceptInvite({ token: inviteCode.value, name: name.value, password: password.value })
@@ -188,9 +196,26 @@ async function submit() {
         </div>
 
         <form @submit.prevent="submit">
+          <label v-if="mode === 'register'">
+            <span>企业名称</span>
+            <input v-model="orgName" type="text" placeholder="如：核心交易技术部" autocomplete="organization" maxlength="100" required />
+          </label>
+          <label v-if="mode === 'register'">
+            <span>企业标识</span>
+            <input
+              v-model="orgSlug"
+              type="text"
+              class="mono"
+              placeholder="小写字母 / 数字 / 连字符，如 acme-corp"
+              pattern="[a-z0-9][a-z0-9-]{2,39}"
+              maxlength="40"
+              autocomplete="off"
+              required
+            />
+          </label>
           <label v-if="mode === 'register' || mode === 'invite'">
             <span>姓名</span>
-            <input v-model="name" type="text" placeholder="请输入姓名" autocomplete="name" />
+            <input v-model="name" type="text" placeholder="请输入姓名" autocomplete="name" required />
           </label>
           <label v-if="mode === 'invite'">
             <span>邀请码</span>
