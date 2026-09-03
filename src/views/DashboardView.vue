@@ -44,7 +44,7 @@ const headline = computed(() => {
   if (failed.value.length) bits.push(`${failed.value.length} 单检查未通过`)
   if (high.value.length) bits.push(`${high.value.length} 条高危未闭环`)
   if (!ws.changes.length) return '工作空间已就绪，等待第一张变更单'
-  return bits.length ? bits.join(' · ') : '当前没有阻塞项，治理节奏平稳'
+  return bits.length ? bits.join(' · ') : '当前没有阻塞项'
 })
 
 function open(id: string) { router.push({ name: 'change-detail', params: { id } }) }

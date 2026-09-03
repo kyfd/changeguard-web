@@ -192,7 +192,7 @@ onMounted(load)
       </article>
 
       <article class="spanel">
-        <h3><i></i>AI 智能分析</h3>
+        <h3><i></i>模型分析</h3>
         <div v-if="aiConfig" class="kv-list">
           <div class="kv"><span>服务状态</span>
             <StatusBadge type="status" :value="aiConfig.llm_configured ? 'OK' : 'PENDING'" size="sm">

@@ -43,8 +43,7 @@ async function toggle(id: string) {
         </div>
         <p>{{ p.description || p.pattern || '暂无说明' }}</p>
         <span class="sev" :class="'sv-' + String(p.severity || '').toLowerCase()">{{ sevLabel[String(p.severity || '').toUpperCase()] || p.severity || '—' }}</span>
-        <!-- 状态与操作合成一个开关：此前徽章显示「启用」、旁边按钮显示「停用」，
-             同一行并排出现两个相反的词，读起来自相矛盾。 -->
+        <!-- 状态和操作合成一个开关，避免同一行出现两个相反的词 -->
         <button
           type="button"
           class="sw"

@@ -25,7 +25,7 @@ const briefCopy = computed(() => {
   if (threat.value.level === 'CRITICAL') return '高危未闭环，审批应暂缓'
   if (threat.value.level === 'ELEVATED') return '风险升高，请优先处理高危单'
   if (threat.value.level === 'WATCH') return '待审堆积，请保持审批节奏'
-  return '治理节奏平稳，证据链完整'
+  return '当前没有阻塞项'
 })
 
 const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -57,8 +57,7 @@ const highN = useCountUp(() => highRisk.value)
 const closureN = useCountUp(() => closureRate.value)
 const svcN = useCountUp(() => ws.apps?.length || 0)
 
-/* 每个节点必须绑定互不重复的指标：此前 audit/evidence、svc/k8s、
-   rollback/pass、approve/gate 四对各自渲染同一个数字，等于把一个事实画了两遍。 */
+/* 每个节点绑定一个独立指标，不要让两个节点渲染同一个数字。 */
 const findingsTotal = computed(() =>
   (ws.changes || []).reduce((n: number, c: any) => n + (c.findings?.length || 0), 0),
 )
@@ -143,7 +142,7 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
 
     <header class="hud">
       <div class="hud-brand">
-        <strong>治理全景</strong>
+        <strong>总览</strong>
         <StatusBadge type="status" :value="threat.level === 'NOMINAL' ? 'OK' : threat.level === 'CRITICAL' ? 'CRITICAL' : 'PENDING'" size="sm">
           {{ threat.label }}
         </StatusBadge>
@@ -165,8 +164,7 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
       <button type="button" @click="go('apps')"><span>服务</span><b>{{ svcN }}</b></button>
     </div>
 
-    <!-- 治理漏斗：全景要回答的首要问题是「变更卡在哪一环」，
-         此前这份数据（flow）已存在于 composable 却从未被渲染。 -->
+    <!-- 变更卡在哪一环 -->
     <section class="panel flow-panel">
       <header>
         <span>变更流转</span>
@@ -216,7 +214,7 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
       </li>
     </ul>
 
-    <p class="hint">点击外圈节点进入对应治理面 · 引擎在线</p>
+    <p class="hint">点击外圈节点进入对应页面</p>
   </section>
 </template>
 
