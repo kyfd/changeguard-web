@@ -1,8 +1,6 @@
 # ChangeGuard Web
 
-> 这是 [ChangeGuard](https://github.com/kyfd/changeguard) 的 Vue 控制台源码，不是独立后端。投 Go / 平台 / DevSecOps 岗请看主仓库。主仓库已经内置一套可用页面；这里是同一产品的 Vue 实现，方便单独改 UI。
-
-[ChangeGuard](https://github.com/kyfd/changeguard) 的 Vue 控制台。登录、变更单、审批、规则和审计都走后端 `/api`，这个仓库只出静态页面。
+[ChangeGuard](https://github.com/kyfd/changeguard) 的 Vue 控制台。主仓库自带一套内嵌页面，这里是同一套界面的 Vue 实现，方便单独改 UI，不是独立后端。登录、变更单、审批、规则和审计都走后端 `/api`，这个仓库只出静态页面。
 
 ## 页面
 

@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspace'
 import type { Change } from '@/api/types'
 
-/* 治理全景数据快照 —— 从工作区数据派生全部指标 */
+/* 总览页指标，全部从工作区数据派生 */
 export function usePanorama() {
   const ws = useWorkspaceStore()
 

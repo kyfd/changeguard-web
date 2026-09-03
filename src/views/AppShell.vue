@@ -18,7 +18,7 @@ const navGroups = [
   {
     label: '观测',
     items: [
-      { to: 'panorama', label: '治理全景', icon: 'activity' },
+      { to: 'panorama', label: '总览', icon: 'activity' },
       { to: 'dashboard', label: '工作台', icon: 'gauge' },
     ],
   },
@@ -144,7 +144,7 @@ onBeforeUnmount(() => {
       <div class="side-foot">
         <div class="svc">
           <span class="dot dot-ok" aria-hidden="true"></span>
-          <div><strong>服务正常</strong><span>治理引擎在线</span></div>
+          <div><strong>服务正常</strong><span>后端已连接</span></div>
         </div>
         <button class="collapse" @click="collapsed = !collapsed" :aria-label="collapsed ? '展开' : '收起'">
           <TechIcon name="chevron-right" :size="16" />

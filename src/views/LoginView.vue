@@ -171,7 +171,7 @@ async function submit() {
       <footer class="aside-foot mono" :class="{ halted: blocked }">
         <span class="live" aria-hidden="true"></span>
         <transition name="meta" mode="out-in">
-          <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '治理引擎在线' }}</span>
+          <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '服务正常' }}</span>
         </transition>
       </footer>
       <span class="stamp mono">GATE&nbsp;CONSOLE&nbsp;·&nbsp;V2.4</span>

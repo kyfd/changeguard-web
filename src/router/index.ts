@@ -8,7 +8,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/AppShell.vue'),
     children: [
       { path: '', redirect: { name: 'panorama' } },
-      { path: 'panorama', name: 'panorama', component: () => import('@/views/PanoramaView.vue'), meta: { title: '治理全景', icon: 'activity' } },
+      { path: 'panorama', name: 'panorama', component: () => import('@/views/PanoramaView.vue'), meta: { title: '总览', icon: 'activity' } },
       { path: 'dashboard', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { title: '工作台', icon: 'gauge' } },
       { path: 'changes', name: 'changes', component: () => import('@/views/ChangesView.vue'), meta: { title: '变更工单', icon: 'code' } },
       { path: 'changes/:id', name: 'change-detail', component: () => import('@/views/ChangeDetailView.vue'), meta: { title: '变更详情', icon: 'code' } },
@@ -35,7 +35,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const t = (to.meta.title as string) || ''
-  document.title = t ? `${t} · ChangeGuard` : 'ChangeGuard · 变更风险治理中枢'
+  document.title = t ? `${t} · ChangeGuard` : 'ChangeGuard'
 })
 
 export default router
