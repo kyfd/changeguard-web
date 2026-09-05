@@ -87,6 +87,8 @@ export interface AgentMessage {
 export interface AgentConversationSummary { conversation?: any; messages?: AgentMessage[]; [k: string]: any }
 
 export interface Workspace {
+  /** 当前快照中未能读取的辅助数据源；变更主列表失败仍直接抛错。 */
+  unavailableSources?: string[]
   dashboard: Dashboard | null
   apps: App[]
   users: User[]

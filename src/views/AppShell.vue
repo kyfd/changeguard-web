@@ -200,12 +200,12 @@ onBeforeUnmount(() => {
       </header>
 
       <main class="content" :class="{ 'content-deck': isPanorama }">
-        <div v-if="ws.loading && !ws.data" class="loading-screen">
+        <div v-if="!isPanorama && ws.loading && !ws.data" class="loading-screen">
           <div class="loader-ring"></div>
           <span>正在读取工作区数据…</span>
         </div>
-        <div v-if="ws.error" class="workspace-error" role="alert">{{ ws.error }} <button @click="ws.load(true).catch(() => {})">重试</button></div>
-        <RouterView v-if="!ws.loading || ws.data" v-slot="{ Component }">
+        <div v-if="!isPanorama && ws.error" class="workspace-error" role="alert">{{ ws.error }} <button @click="ws.load(true).catch(() => {})">重试</button></div>
+        <RouterView v-if="isPanorama || !ws.loading || ws.data" v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
@@ -381,7 +381,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   width: 100%;
 }
-.content-deck { padding: 0; overflow: hidden; }
+.content-deck { padding: 0; overflow-x: hidden; overflow-y: auto; }
 .content-deck :deep(.pano),
 .content-deck :deep(.deck) {
   height: 100%;
