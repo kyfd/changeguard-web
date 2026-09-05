@@ -213,10 +213,22 @@ export const api = {
   // 一次性加载工作区全量数据
   async loadWorkspace(): Promise<Workspace> {
     const changes = await this.changes()
+    const unavailableSources: string[] = []
+    async function snapshotSource<T>(source: string, path: string, fallback: T): Promise<T> {
+      try { return await request<T>(path) }
+      catch (error) {
+        if (error instanceof APIError && error.status === 401) throw error
+        unavailableSources.push(source)
+        return fallback
+      }
+    }
     const [dashboard, apps, users, policies, audits, config, conflicts, integrationStatus, integrationEvents] = await Promise.all([
-      soft<Dashboard | null>('/api/dashboard', null), soft<any[]>('/api/apps', []), soft<any[]>('/api/users', []),
-      soft<Policy[]>('/api/policies', []), soft<any[]>('/api/audits?limit=250', []), soft<any>('/api/config/status', null),
-      this.conflicts(), this.integrationStatus(), this.integrationEvents(100),
+      snapshotSource<Dashboard | null>('dashboard', '/api/dashboard', null),
+      snapshotSource<Workspace['apps']>('apps', '/api/apps', []), snapshotSource<Workspace['users']>('users', '/api/users', []),
+      snapshotSource<Policy[]>('policies', '/api/policies', []), snapshotSource<Workspace['audits']>('audits', '/api/audits?limit=250', []),
+      snapshotSource<Workspace['config']>('config', '/api/config/status', null), snapshotSource<Workspace['conflicts']>('conflicts', '/api/conflicts', null),
+      snapshotSource<Workspace['integrationStatus']>('integrationStatus', '/api/integrations/status', {}),
+      snapshotSource<Workspace['integrationEvents']>('integrationEvents', '/api/integrations/events?limit=100', []),
     ])
     const passportBundle = await loadPassports(changes as Change[])
     const byChange = new Map<string, Passport>()
@@ -230,6 +242,7 @@ export const api = {
       return p ? { ...c, passport: p } : c
     })
     return {
+      unavailableSources: unavailableSources.sort(),
       dashboard, apps: apps || [], users: users || [], changes: normalizedChanges,
       policies: policies || [], audits: audits || [], config, passports: passportBundle,
       conflicts, integrationStatus: integrationStatus || {}, integrationEvents: listFrom(integrationEvents, ['events', 'items', 'data']),
