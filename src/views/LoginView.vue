@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useWorkspaceStore } from '@/stores/workspace'
 import TechIcon from '@/components/TechIcon.vue'
@@ -30,79 +30,13 @@ const actionLabel = computed(() =>
   mode.value === 'login' ? '进入系统' : mode.value === 'register' ? '创建并进入' : '加入工作空间',
 )
 
-/* 登录页无法读取真实工单（未认证），此处为门禁流程的循环演示 */
-type Phase = 'idle' | 'run' | 'pass' | 'block'
-
-const STAGES = [
-  { label: '变更提交', pending: '等待提交', active: '接收变更单', settled: 'CHG-4821' },
-  { label: '静态校验', pending: '尚未开始', active: '解析 DDL…', settled: '12 项通过' },
-  { label: '风险评级', pending: '尚未评级', active: '比对规则…', settled: 'HIGH · 索引重建' },
-  { label: '独立审批', pending: '等待复核', active: '通知审批人…', settled: '已拦截' },
-  { label: '进入生产', pending: '门禁未放行', active: '', settled: '门禁未放行' },
+const steps = [
+  { label: '提交变更', meta: '记录内容与目标环境' },
+  { label: '规则检查', meta: '查看命中规则与阻断项' },
+  { label: '预发验证', meta: '核对执行与回滚证据' },
+  { label: '独立审批', meta: '由审核人批准或拒绝' },
+  { label: 'CI 消费通行证', meta: '校验发布内容与授权' },
 ]
-
-const BLOCK_AT = 2 // 风险评级判定为高危，门禁在此拦截
-
-const cursor = ref(-1)
-const phase = ref<Phase>('idle')
-const reduceMotion =
-  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
-
-const steps = computed(() =>
-  STAGES.map((s, i) => {
-    if (reduceMotion) {
-      const st = i < BLOCK_AT ? 'pass' : i === BLOCK_AT ? 'block' : 'idle'
-      return { ...s, state: st as Phase, meta: i <= BLOCK_AT ? s.settled : s.pending }
-    }
-    if (i > cursor.value) return { ...s, state: 'idle' as Phase, meta: s.pending }
-    if (i === cursor.value) {
-      const meta = phase.value === 'run' ? s.active || s.pending : s.settled
-      return { ...s, state: phase.value, meta }
-    }
-    return { ...s, state: (i < BLOCK_AT ? 'pass' : 'block') as Phase, meta: s.settled }
-  }),
-)
-
-/* 必须等风险评级落定，光标到达该步时判定尚未完成 */
-const blocked = computed(
-  () => cursor.value > BLOCK_AT || (cursor.value === BLOCK_AT && phase.value === 'block'),
-)
-
-/* 导轨生长到当前节点：每步占 1/5，节点位于该步中部 */
-const progress = computed(() => {
-  if (reduceMotion) return (BLOCK_AT + 0.5) / STAGES.length
-  if (cursor.value < 0) return 0
-  return Math.min((cursor.value + 0.5) / STAGES.length, 1)
-})
-
-let timer: ReturnType<typeof setTimeout> | undefined
-function schedule(fn: () => void, ms: number) {
-  timer = setTimeout(fn, ms)
-}
-
-function advance() {
-  if (cursor.value >= BLOCK_AT + 1) {
-    // 停在拦截态，让用户看清结论，然后重来
-    schedule(() => {
-      cursor.value = -1
-      phase.value = 'idle'
-      advance()
-    }, 4200)
-    return
-  }
-  cursor.value += 1
-  phase.value = 'run'
-  schedule(() => {
-    phase.value = cursor.value < BLOCK_AT ? 'pass' : 'block'
-    schedule(advance, cursor.value === BLOCK_AT ? 1500 : 620)
-  }, 900)
-}
-
-onMounted(() => {
-  if (reduceMotion) return
-  schedule(advance, 500)
-})
-onBeforeUnmount(() => clearTimeout(timer))
 
 async function submit() {
   if (loading.value) return
@@ -124,7 +58,7 @@ async function submit() {
       await auth.acceptInvite({ token: inviteCode.value, name: name.value, password: password.value })
     }
     await ws.load(true)
-    router.push({ name: 'panorama' })
+    router.push({ name: 'dashboard' })
   } catch (e: any) {
     error.value = e instanceof APIError ? e.message : '操作失败，请重试'
   } finally {
@@ -143,38 +77,26 @@ async function submit() {
       <span class="cross" style="left: 38%; top: 86%" aria-hidden="true"></span>
 
       <header class="lockup">
-        <span class="mark"><BrandLogo :size="20" :variant="blocked ? 'blocked' : 'default'" /></span>
+        <span class="mark"><BrandLogo :size="20"  /></span>
         <strong>ChangeGuard</strong>
         <span class="lockup-sep" aria-hidden="true"></span>
         <span class="kicker">CHANGE RISK CONTROL</span>
       </header>
 
       <div class="copy">
-        <h1>高危变更<br>到不了生产。</h1>
+        <h1>检查变更，<br>核对审批。</h1>
+        <p>SQL、配置与 Kubernetes 发布前检查</p>
       </div>
 
-      <ol
-        class="pipe"
-        :class="{ blocked }"
-        :style="{ '--progress': progress }"
-        aria-label="变更门禁流程演示"
-      >
-        <li v-for="s in steps" :key="s.label" :class="['pipe-step', s.state]">
+      <ol class="pipe" aria-label="变更检查流程说明">
+        <li v-for="s in steps" :key="s.label" class="pipe-step">
           <span class="pipe-node" aria-hidden="true"></span>
           <span class="pipe-label">{{ s.label }}</span>
-          <transition name="meta" mode="out-in">
-            <span class="pipe-meta mono" :key="s.meta">{{ s.meta }}</span>
-          </transition>
+          <span class="pipe-meta">{{ s.meta }}</span>
         </li>
       </ol>
 
-      <footer class="aside-foot mono" :class="{ halted: blocked }">
-        <span class="live" aria-hidden="true"></span>
-        <transition name="meta" mode="out-in">
-          <span :key="String(blocked)">{{ blocked ? '门禁已拦截 · 变更未进入生产' : '服务正常' }}</span>
-        </transition>
-      </footer>
-      <span class="stamp mono">GATE&nbsp;CONSOLE&nbsp;·&nbsp;V2.4</span>
+      <footer class="aside-foot">通行证消费不代表部署成功，发布结果需另行核对。</footer>
     </section>
 
     <section class="pane">
@@ -184,7 +106,7 @@ async function submit() {
             <strong class="display">{{ headline }}</strong>
             <span>使用企业账号继续</span>
           </div>
-          <button class="theme-switch" type="button" @click="theme.toggle()">
+          <button class="theme-switch" type="button" :aria-label="theme.isLight.value ? '切换为深色' : '切换为浅色'" @click="theme.toggle()">
             <TechIcon :name="theme.isLight.value ? 'moon' : 'sun'" :size="15" />
           </button>
         </header>
@@ -236,7 +158,7 @@ async function submit() {
           <NeonButton type="submit" block :loading="loading" size="lg">{{ actionLabel }}</NeonButton>
         </form>
 
-        <p class="fineprint">所有登录行为将被记录并纳入审计日志</p>
+        <p class="fineprint">请使用所在工作空间的账号登录</p>
       </section>
     </section>
   </div>
@@ -328,7 +250,9 @@ async function submit() {
   color: var(--text-strong);
 }
 
-/* Governance pipeline: the product's core promise, made literal */
+.copy p { margin-top: 1rem; color: var(--text-mute); line-height: 1.6; }
+
+/* 静态流程说明 */
 .pipe {
   position: relative;
   max-width: 26rem;
@@ -348,22 +272,6 @@ async function submit() {
   background: var(--line);
   border-radius: 1px;
 }
-/* 进度导轨：随流程推进向下生长 */
-.pipe::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 2px;
-  border-radius: 1px;
-  height: calc(var(--progress, 0) * (100% - 12px));
-  background: var(--jade);
-  transition: height 0.62s var(--ease), background 0.4s var(--ease);
-}
-.pipe.blocked::after {
-  background: linear-gradient(180deg, var(--jade) 45%, var(--cinnabar) 100%);
-}
-
 .pipe-step {
   position: relative;
   display: grid;
@@ -375,7 +283,6 @@ async function submit() {
   transition: opacity 0.4s var(--ease);
 }
 .pipe-step:last-child { border-bottom: none; }
-.pipe-step.idle { opacity: 0.4; }
 
 .pipe-node {
   position: absolute;
@@ -399,38 +306,6 @@ async function submit() {
   font-variant-numeric: tabular-nums;
 }
 
-/* 校验中 */
-.pipe-step.run .pipe-node {
-  background: var(--brand);
-  border-color: var(--brand);
-  animation: pulse 1.1s var(--ease) infinite;
-}
-.pipe-step.run .pipe-label { color: var(--text-strong); }
-.pipe-step.run .pipe-meta { color: var(--brand-bright); }
-
-/* 通过 */
-.pipe-step.pass .pipe-node { background: var(--jade); border-color: var(--jade); }
-.pipe-step.pass .pipe-label { color: var(--text); }
-
-/* 拦截 */
-.pipe-step.block .pipe-node {
-  background: var(--cinnabar);
-  border-color: var(--cinnabar);
-  box-shadow: 0 0 0 4px var(--cinnabar-soft);
-}
-.pipe-step.block .pipe-label { color: var(--text-strong); font-weight: 600; }
-.pipe-step.block .pipe-meta { color: var(--cinnabar); }
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--brand-soft); }
-  50% { box-shadow: 0 0 0 5px transparent; }
-}
-
-/* meta 文案切换 */
-.meta-enter-active, .meta-leave-active { transition: opacity 0.18s var(--ease), transform 0.18s var(--ease); }
-.meta-enter-from { opacity: 0; transform: translateY(-3px); }
-.meta-leave-to { opacity: 0; transform: translateY(3px); }
-
 .aside-foot {
   position: relative;
   display: flex;
@@ -439,27 +314,6 @@ async function submit() {
   font-size: 0.74rem;
   color: var(--text-faint);
 }
-.live {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--r-xs);
-  background: var(--jade);
-  box-shadow: 0 0 0 3px var(--jade-soft);
-}
-.aside-foot.halted .live {
-  background: var(--cinnabar);
-  box-shadow: 0 0 0 3px var(--cinnabar-soft);
-}
-.stamp {
-  position: absolute;
-  right: clamp(2rem, 5vw, 5rem);
-  bottom: 1.6rem;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--text-faint);
-  opacity: 0.8;
-}
-
 /* ── Right: the auth surface ────────────────────────────────── */
 .pane {
   display: grid;

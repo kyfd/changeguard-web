@@ -22,13 +22,13 @@ async function toggle(id: string) {
   <div class="page">
     <div class="page-head">
       <div>
-        <div class="page-title">治理规则</div>
+        <div class="page-title">检查规则</div>
         <div class="page-sub">策略库 · {{ ws.policies.length }} 条 · {{ ws.policies.filter((p: any) => p.enabled !== false).length }} 启用</div>
       </div>
       <div class="page-actions"><NeonButton size="sm" @click="ws.load(true)"><TechIcon name="refresh" :size="15" /> 刷新</NeonButton></div>
     </div>
 
-    <div v-if="!ws.policies.length" class="empty-full">暂无治理规则</div>
+    <div v-if="!ws.policies.length" class="empty-full">暂无检查规则</div>
     <div v-else class="ledger">
       <div class="ledger-head" aria-hidden="true">
         <span>规则</span>

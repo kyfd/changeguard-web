@@ -16,14 +16,14 @@ const theme = useTheme()
 
 const navGroups = [
   {
-    label: '观测',
+    label: '工作',
     items: [
-      { to: 'panorama', label: '总览', icon: 'activity' },
       { to: 'dashboard', label: '工作台', icon: 'gauge' },
+      { to: 'panorama', label: '总览', icon: 'activity' },
     ],
   },
   {
-    label: '治理',
+    label: '变更',
     items: [
       { to: 'changes', label: '变更工单', icon: 'code' },
       { to: 'approvals', label: '审批中心', icon: 'check-circle' },
@@ -31,10 +31,10 @@ const navGroups = [
     ],
   },
   {
-    label: '资产',
+    label: '设置',
     items: [
-      { to: 'policies', label: '治理规则', icon: 'shield' },
-      { to: 'apps', label: '纳管服务', icon: 'server' },
+      { to: 'policies', label: '检查规则', icon: 'shield' },
+      { to: 'apps', label: '服务', icon: 'server' },
       { to: 'audits', label: '审计日志', icon: 'scroll-text' },
       { to: 'settings', label: '系统设置', icon: 'settings' },
     ],
@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
         <div class="brand-mark" aria-hidden="true"><BrandLogo :size="16" /></div>
         <div class="brand-text">
           <strong>ChangeGuard</strong>
-          <span>变更风险治理</span>
+          <span>变更检查与审批</span>
         </div>
       </div>
 
@@ -143,8 +143,8 @@ onBeforeUnmount(() => {
 
       <div class="side-foot">
         <div class="svc">
-          <span class="dot dot-ok" aria-hidden="true"></span>
-          <div><strong>服务正常</strong><span>后端已连接</span></div>
+          <span class="dot" :class="ws.error ? 'dot-err' : ws.loading ? 'dot-warn' : ''" aria-hidden="true"></span>
+          <div><strong>{{ ws.loading ? '正在读取' : ws.error ? '读取失败' : ws.loadedAt ? '最近更新' : '尚未读取' }}</strong><span>{{ ws.error ? '请重试刷新' : ws.loadedAt ? new Date(ws.loadedAt).toLocaleTimeString('zh-CN', { hour12: false }) : '工作区数据' }}</span></div>
         </div>
         <button class="collapse" @click="collapsed = !collapsed" :aria-label="collapsed ? '展开' : '收起'">
           <TechIcon name="chevron-right" :size="16" />
@@ -202,9 +202,10 @@ onBeforeUnmount(() => {
       <main class="content" :class="{ 'content-deck': isPanorama }">
         <div v-if="ws.loading && !ws.data" class="loading-screen">
           <div class="loader-ring"></div>
-          <span>正在同步治理数据…</span>
+          <span>正在读取工作区数据…</span>
         </div>
-        <RouterView v-else v-slot="{ Component }">
+        <div v-if="ws.error" class="workspace-error" role="alert">{{ ws.error }} <button @click="ws.load(true).catch(() => {})">重试</button></div>
+        <RouterView v-if="!ws.loading || ws.data" v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
@@ -417,5 +418,13 @@ onBeforeUnmount(() => {
   .mobile-menu { display: grid; }
   .search { width: 180px; }
   .hits { width: 260px; right: 0; left: auto; }
+}
+.workspace-error { padding: .7rem; margin-bottom: .7rem; color: var(--cinnabar); background: var(--cinnabar-soft); }
+.workspace-error button { text-decoration: underline; margin-left: .5rem; }
+@media (max-width: 600px) {
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-left, .topbar-right { gap: 6px; min-width: 0; }
+  .search-wrap, .clock, .user-meta, .crumb-root, .crumb > svg { display: none; }
+  .content { padding: 12px; overflow-y: auto; }
 }
 </style>

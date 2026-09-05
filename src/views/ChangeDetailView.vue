@@ -7,7 +7,7 @@ import { api } from '@/api/client'
 import TechIcon from '@/components/TechIcon.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
-import { PASSPORT_STEPS, stepIndex } from '@/lib/labels'
+import { PASSPORT_STEPS, stepIndex, STATUS_LABEL, passportStepLabel, checkSummary } from '@/lib/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,14 +20,7 @@ const detailLoading = ref(false)
 const detailError = ref('')
 const detailErrorStatus = ref(0)
 const change = computed(() => detail.value || ws.changes.find(c => c.id === changeId.value))
-const blockingCount = computed(() => (change.value?.findings || []).filter((f: any) => f.blocking).length)
-const openCount = computed(() => (change.value?.findings || []).filter((f: any) => f.status !== 'RESOLVED').length)
-
-const statusLabel: Record<string, string> = {
-  DRAFT: '草稿', CHECKING: '检查中', CHECK_FAILED: '检查失败', READY_FOR_EXPERIMENT: '待验证',
-  EXPERIMENT_QUEUED: '实验排队', EXPERIMENT_RUNNING: '实验中', WAITING_APPROVAL: '待审批',
-  APPROVED: '已批准', COMPLETED: '已完成', REJECTED: '已拒绝',
-}
+const summary = computed(() => checkSummary(change.value))
 const riskLabel: Record<string, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', UNKNOWN: '待定' }
 const evLabel: Record<string, string> = { REAL: '真实', NOT_RUN: '未验证', FAILED: '失败', DEMO_ONLY: '演示' }
 function owner(c: any) { return c.owner_name || c.owner || c.reviewer_name || '—' }
@@ -39,7 +32,7 @@ function fmt(t?: string) {
 }
 function initials(n?: string) { return (n || 'CG').slice(0, 2).toUpperCase() }
 
-// ---- Clawbot ----
+// ---- 变更助手 ----
 const question = ref('')
 const asking = ref(false)
 const qaList = ref<any[]>([])
@@ -160,7 +153,7 @@ const findingState: Record<string, [string, string]> = {
     <ol class="passport">
       <li v-for="(s, i) in PASSPORT_STEPS" :key="s.key" :class="{ on: i === stepIndex(change.status), done: i < stepIndex(change.status) }">
         <em class="mono">{{ String(i + 1).padStart(2, '0') }}</em>
-        <span>{{ s.label }}</span>
+        <span>{{ passportStepLabel(s.key, change.status, s.label) }}</span>
       </li>
     </ol>
 
@@ -169,19 +162,9 @@ const findingState: Record<string, [string, string]> = {
         <!-- 状态概览 -->
         <div class="dpanel">
           <div class="dpanel-head"><h3>变更状态</h3></div>
-          <!-- 结论先行：流程条已经表达了"卡在第几步"，这里要回答"为什么过不去" -->
-          <div v-if="blockingCount" class="verdict blocked">
-            <div class="verdict-main">
-              <strong>{{ blockingCount }} 项阻断规则未解除，暂不可进入生产</strong>
-              <span>共 {{ change.findings?.length || 0 }} 项证据 · {{ openCount }} 项待处理</span>
-            </div>
-          </div>
-          <div v-else-if="change.findings?.length" class="verdict clear">
-            <div class="verdict-main">
-              <strong>无阻断项</strong>
-              <span>{{ change.findings.length }} 项证据已全部通过</span>
-            </div>
-          </div>
+          <p class="dpanel-desc"><StatusBadge type="status" :value="change.status">{{ STATUS_LABEL[change.status] || change.status }}</StatusBadge></p>
+          <p class="dpanel-desc">{{ summary }}</p>
+          <p class="dpanel-desc">通行证消费不代表部署成功，部署结果请查看 CI 或运行记录。</p>
           <div class="status-strip">
             <div class="status-chip"><span class="dot" :class="change.risk === 'HIGH' ? 'dot-err' : change.risk === 'MEDIUM' ? 'dot-warn' : 'dot-ok'"></span> 风险：{{ riskLabel[change.risk] || change.risk }}</div>
             <div class="status-chip"><span class="dot dot-ok"></span> 环境：{{ change.environment || '—' }}</div>
@@ -196,7 +179,7 @@ const findingState: Record<string, [string, string]> = {
         <!-- 确定性规则检查 -->
         <div class="dpanel">
           <div class="dpanel-head"><h3>确定性规则检查</h3><span>{{ change.findings?.length || 0 }} 项证据</span></div>
-          <div v-if="!change.findings?.length" class="empty-full">尚未执行规则检查，提交后生成可复现证据。</div>
+          <div v-if="!change.findings?.length" class="empty-full">{{ change.check_run || change.checkRun ? summary + '；本次未返回发现项。' : '暂无规则检查记录。' }}</div>
           <div class="finding-list" v-else>
             <div v-for="f in change.findings" :key="f.id" class="finding-card">
               <span class="finding-level" :class="String(f.severity || '').toLowerCase()">{{ riskLabel[f.severity] || '—' }}</span>
@@ -218,9 +201,9 @@ const findingState: Record<string, [string, string]> = {
           </div>
         </div>
 
-        <!-- Clawbot 变更助手 -->
+        <!-- 变更助手（可选） -->
         <div class="dpanel agent-panel">
-          <div class="dpanel-head"><h3><TechIcon name="activity" :size="16" /> Clawbot 变更助手</h3><span>只读证据 · 不越权</span></div>
+          <div class="dpanel-head"><h3><TechIcon name="activity" :size="16" /> 变更助手（可选）</h3><span>基于变更记录回答问题</span></div>
           <div class="agent-qa-list">
             <div v-for="m in qaList" :key="m.id" class="agent-qa-item" :class="{ 'is-pending': m.pending, 'is-error': m.error }">
               <div class="agent-qa-q">
@@ -228,7 +211,7 @@ const findingState: Record<string, [string, string]> = {
                 <div><div class="comment-meta"><strong>{{ auth.user?.name || '我' }}</strong><span>{{ fmt(m.created_at) }}</span></div><p>{{ m.question }}</p></div>
               </div>
               <div class="agent-qa-a">
-                <div class="agent-qa-a-head"><strong>Clawbot</strong><span v-if="m.trace?.length">{{ m.trace.length }} 项证据</span></div>
+                <div class="agent-qa-a-head"><strong>变更助手</strong><span v-if="m.trace?.length">{{ m.trace.length }} 项证据</span></div>
                 <p v-if="!m.pending">{{ m.answer }}</p>
                 <div v-else class="agent-qa-thinking"><span class="agent-qa-dots"><i></i><i></i><i></i></span> 正在读取变更证据…</div>
                 <div v-if="m.citations?.length" class="agent-qa-citations">
@@ -253,7 +236,7 @@ const findingState: Record<string, [string, string]> = {
               <button v-for="s in suggestions" :key="s" type="button" class="chip" :disabled="asking" @click="askAgent(s)">{{ s }}</button>
             </div>
             <div class="agent-qa-foot">
-              <span>只读回答，带证据链；不代替人工审批</span>
+              <span>回答仅供参考，不代替规则检查与人工审批</span>
               <NeonButton type="submit" size="sm" :loading="asking"><TechIcon name="activity" :size="14" /> 提问</NeonButton>
             </div>
           </form>
@@ -345,21 +328,7 @@ const findingState: Record<string, [string, string]> = {
 .finding-state-verified { background: var(--green-soft); color: var(--green-bright); }
 .finding-title-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .blocking-tag { padding: .1em .5em; border-radius: var(--r-sm); background: var(--cinnabar); color: #fff; font-size: var(--fs-11); }
-/* 裁决条：把"能不能上生产"这个结论提到首屏，不必滚到证据列表末尾 */
-.verdict {
-  display: flex; align-items: center; gap: .7rem;
-  padding: .7rem .85rem; margin-bottom: .75rem;
-  border: 1px solid var(--line); border-radius: var(--r);
-  border-left: 3px solid var(--line-bright);
-}
-.verdict.blocked { border-left-color: var(--red); background: var(--red-soft); }
-.verdict.clear { border-left-color: var(--jade); }
-.verdict-main { display: grid; gap: .16rem; }
-.verdict-main strong { font-size: var(--fs-16); color: var(--text-strong); font-weight: 600; }
-.verdict.blocked .verdict-main strong { color: var(--red-bright); }
-.verdict-main span { font-size: var(--fs-12); color: var(--text-mute); }
-
-/* Clawbot */
+/* 变更助手 */
 .agent-qa-list { display: grid; gap: .8rem; max-height: 460px; overflow-y: auto; }
 .agent-qa-item { display: grid; gap: .45rem; }
 .agent-qa-q { display: flex; align-items: flex-start; gap: .6rem; }

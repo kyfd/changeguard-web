@@ -100,5 +100,5 @@ export interface Workspace {
   integrationEvents: any[]
 }
 
-export interface SessionUser { id?: string; name?: string; email?: string; role?: string }
+export interface SessionUser { id?: string; name?: string; email?: string; role?: string; enterprise_admin?: boolean; organization_name?: string; organization_id?: string }
 export interface Session { user?: SessionUser; csrf_token?: string; enterprise?: any; [k: string]: any }

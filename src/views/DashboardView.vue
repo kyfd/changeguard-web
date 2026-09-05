@@ -6,7 +6,7 @@ import { api } from '@/api/client'
 import TechIcon from '@/components/TechIcon.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
-import { STATUS_LABEL, ownerOf, fmtTime } from '@/lib/labels'
+import { STATUS_LABEL, ownerOf, fmtTime, consumptionStats } from '@/lib/labels'
 
 const ws = useWorkspaceStore()
 const router = useRouter()
@@ -15,10 +15,9 @@ const pending = computed(() => ws.changes.filter(c => c.status === 'WAITING_APPR
 const failed = computed(() => ws.changes.filter(c => c.status === 'CHECK_FAILED'))
 const high = computed(() => ws.changes.filter(c => c.risk === 'HIGH' && !['APPROVED', 'COMPLETED', 'REJECTED'].includes(c.status)))
 const recent = computed(() => [...ws.changes].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || '')).slice(0, 8))
-const closed = computed(() => ws.changes.filter(c => ['APPROVED', 'COMPLETED'].includes(c.status)).length)
-const closure = computed(() => ws.changes.length ? Math.round(closed.value / ws.changes.length * 100) : 0)
+const consumption = computed(() => consumptionStats(ws.changes))
 
-/* 待办按紧急度合并：待审批优先，其次检查失败，再次高危未闭环。
+/* 待办按紧急度合并：待审批优先，其次检查失败，再次高危待处理。
    KPI 与列表必须同源，否则会出现「待审批 0」却列出若干条的矛盾。 */
 const inbox = computed(() => {
   const seen = new Set<string>()
@@ -33,7 +32,7 @@ const inbox = computed(() => {
   }
   for (const c of high.value) {
     if (seen.has(c.id)) continue
-    seen.add(c.id); out.push({ c, kind: '高危未闭环', tone: 'risk' })
+    seen.add(c.id); out.push({ c, kind: '高危待处理', tone: 'risk' })
   }
   return out
 })
@@ -42,9 +41,9 @@ const headline = computed(() => {
   const bits: string[] = []
   if (pending.value.length) bits.push(`${pending.value.length} 单待审批`)
   if (failed.value.length) bits.push(`${failed.value.length} 单检查未通过`)
-  if (high.value.length) bits.push(`${high.value.length} 条高危未闭环`)
+  if (high.value.length) bits.push(`${high.value.length} 条高危待处理`)
   if (!ws.changes.length) return '工作空间已就绪，等待第一张变更单'
-  return bits.length ? bits.join(' · ') : '当前没有阻塞项'
+  return bits.length ? bits.join(' · ') : '当前已加载变更没有上述待办'
 })
 
 function open(id: string) { router.push({ name: 'change-detail', params: { id } }) }
@@ -52,13 +51,13 @@ function openDeck() {
   router.push({ name: 'panorama' })
 }
 
-/* 治理趋势：近 6 个自然月（UTC+8 口径，与审计月报一致）。-1 为"无样本"，显示为— */
+/* 变更趋势：近 6 个自然月（UTC+8 口径，与审计月报一致）。-1 为"无样本"，显示为— */
 const trends = ref<any[]>([])
 const trendsLoaded = ref(false)
 onMounted(async () => {
   try {
     const data = await api.trends(6)
-    trends.value = Array.isArray(data) ? data : (data?.trends || [])
+    trends.value = Array.isArray(data) ? data : []
   } catch { /* 趋势是增强信息，加载失败不打扰工作台 */ }
   trendsLoaded.value = true
 })
@@ -78,7 +77,7 @@ function seriesPoints(getter: (t: any) => number | null, width: number, height: 
   }).filter(Boolean) as { x: number; y: number; v: number }[]
   if (pts.length < 1) return null
   return {
-    line: pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    line: pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
     dots: pts,
   }
 }
@@ -114,8 +113,8 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
         <div class="page-sub">{{ headline }}</div>
       </div>
       <div class="page-actions">
-        <NeonButton variant="ghost" size="sm" @click="openDeck"><TechIcon name="activity" :size="15" /> 全景</NeonButton>
-        <NeonButton size="sm" @click="ws.load(true)"><TechIcon name="refresh" :size="15" /> 刷新</NeonButton>
+        <NeonButton variant="ghost" size="sm" @click="openDeck"><TechIcon name="activity" :size="15" /> 总览</NeonButton>
+        <NeonButton size="sm" @click="ws.load(true).catch(() => {})"><TechIcon name="refresh" :size="15" /> 刷新</NeonButton>
       </div>
     </div>
 
@@ -131,30 +130,30 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
         <small>门禁拦下，需整改后重提</small>
       </button>
       <button class="now-card warn" :class="{ mute: !high.length }" @click="router.push({ name: 'risks' })">
-        <span>高危未闭环</span>
+        <span>高危待处理</span>
         <strong>{{ high.length }}</strong>
-        <small>整改完成前不可批准</small>
+        <small>请核对规则结果与验证证据</small>
       </button>
       <button class="now-card" @click="router.push({ name: 'changes' })">
-        <span>闭环率</span>
-        <strong>{{ closure }}<em>%</em></strong>
-        <small>已闭环 {{ closed }} / {{ ws.changes.length }}</small>
+        <span>消费占比</span>
+        <strong>{{ consumption.percent }}<em>%</em></strong>
+        <small>通行证已消费 {{ consumption.consumed }} / 当前已加载 {{ consumption.total }}</small>
       </button>
     </div>
 
     <!-- 治理趋势：仅在有历史数据时出现，空工作台不打扰 -->
     <section v-if="hasTrends" class="trends">
       <header>
-        <h3>治理趋势<span class="hint mono">近 {{ trends.length }} 个月 · UTC+8 月口径</span></h3>
+        <h3>变更趋势<span class="hint mono">近 {{ trends.length }} 个月 · UTC+8 月口径</span></h3>
         <span class="legend">
-          <i class="dot brand"></i>已完成 <i class="dot red"></i>已拒绝 <i class="dot gray"></i>推进中
+          <i class="dot brand"></i>通行证已消费 <i class="dot red"></i>已拒绝 <i class="dot gray"></i>推进中
         </span>
       </header>
       <div class="trend-grid">
         <div class="trend">
           <div class="kicker">月提交量</div>
           <div class="bars">
-            <div v-for="b in submittedBars" :key="b.label" class="bar-col" :title="`${b.label} 月：提交 ${b.total}（完成 ${b.done} / 拒绝 ${b.rejected} / 推进中 ${b.flying}）`">
+            <div v-for="b in submittedBars" :key="b.label" class="bar-col" :title="`${b.label} 月：提交 ${b.total}（消费 ${b.done} / 拒绝 ${b.rejected} / 推进中 ${b.flying}）`">
               <div class="bar-stack">
                 <i class="seg flying" :style="{ height: b.flyingH + '%' }"></i>
                 <i class="seg rejected" :style="{ height: b.rejectedH + '%' }"></i>
@@ -194,7 +193,7 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
     <div class="split">
       <section class="queue">
         <header>
-          <h3>待你处理<span class="count mono">{{ inbox.length }}</span></h3>
+          <h3>待处理事项<span class="count mono">{{ inbox.length }}</span></h3>
           <button class="text-link" @click="router.push({ name: 'approvals' })">全部审批</button>
         </header>
         <button v-for="it in inbox" :key="it.c.id" class="queue-row" @click="open(it.c.id)">
@@ -349,5 +348,11 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
 }
 @media (max-width: 980px) {
   .now-grid, .split { grid-template-columns: 1fr; }
+  .page { overflow-y: auto; }
+  .page > .split { flex: none; min-height: auto; overflow: visible; }
+  .queue { min-height: 240px; overflow: visible; }
+  .trends { flex: none; }
+  .trends header, .trends h3 { flex-wrap: wrap; }
+  .trends .legend { flex-wrap: wrap; line-height: 1.7; }
 }
 </style>

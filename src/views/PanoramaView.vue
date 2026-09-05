@@ -22,10 +22,10 @@ onMounted(() => { tick(); timer = setInterval(tick, 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 
 const briefCopy = computed(() => {
-  if (threat.value.level === 'CRITICAL') return '高危未闭环，审批应暂缓'
+  if (threat.value.level === 'CRITICAL') return '已加载变更中高危占比较高，请核对检查结果'
   if (threat.value.level === 'ELEVATED') return '风险升高，请优先处理高危单'
   if (threat.value.level === 'WATCH') return '待审堆积，请保持审批节奏'
-  return '当前没有阻塞项'
+  return '已加载变更的风险分布'
 })
 
 const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -113,7 +113,7 @@ function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
 /* 漏斗最大阶段决定横条比例；这是全景真正要回答的问题：变更卡在哪一环。 */
 const flowMax = computed(() => Math.max(1, ...flow.value.map(s => s.count)))
 const bottleneck = computed(() => {
-  const open = flow.value.filter(s => s.label !== '已闭环')
+  const open = flow.value.filter(s => !s.statuses.some(status => ['COMPLETED', 'REJECTED'].includes(status)))
   return open.reduce((a, b) => (b.count > a.count ? b : a), open[0])
 })
 const riskMix = computed(() => {
@@ -160,7 +160,7 @@ const appMax = computed(() => Math.max(1, ...appRanking.value.map(a => a.count))
       <button type="button" :class="{ mute: !pending }" @click="go('approvals')"><span>待审批</span><b>{{ pendingN }}</b></button>
       <button type="button" class="warn" :class="{ mute: !failedCount }" @click="go('changes')"><span>检查未通过</span><b>{{ failedN }}</b></button>
       <button type="button" class="warn" :class="{ mute: !highRisk }" @click="go('risks')"><span>高危</span><b>{{ highN }}</b></button>
-      <button type="button" @click="go('changes')"><span>闭环</span><b>{{ closureN }}%</b></button>
+      <button type="button" @click="go('changes')"><span>消费占比（已加载）</span><b>{{ closureN }}%</b></button>
       <button type="button" @click="go('apps')"><span>服务</span><b>{{ svcN }}</b></button>
     </div>
 

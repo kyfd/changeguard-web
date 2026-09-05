@@ -1,6 +1,10 @@
 # ChangeGuard Web
 
-[ChangeGuard](https://github.com/kyfd/changeguard) 的 Vue 控制台。主仓库自带一套内嵌页面，这里是同一套界面的 Vue 实现，方便单独改 UI，不是独立后端。登录、变更单、审批、规则和审计都走后端 `/api`，这个仓库只出静态页面。
+[ChangeGuard](https://github.com/kyfd/changeguard) 的 Vue 控制台，不是独立后端。主要用于查看变更、检查结果和待办，以及执行审批、管理设置。接口走后端，构建产物是静态页面。
+
+这套控制台尚未提供完整的新建变更、运行检查和签发通行证操作界面；完整操作流程请使用主仓库的内嵌页面。API 客户端中存在对应方法，不代表 Vue 页面已实现这些操作。变更助手为可选功能，依赖后端配置，回答不代替检查或审批。
+
+登录后默认进入工作台。`COMPLETED` 表示通行证已被消费，不代表部署成功；消费占比仅计算当前已加载变更。月度趋势来自独立后端接口，采用其月度统计口径。
 
 ## 页面
 
@@ -9,11 +13,11 @@
 | `/panorama` | 总览 |
 | `/dashboard` | 工作台 |
 | `/changes` | 变更列表 |
-| `/changes/:id` | 变更详情、检查结果、通行证 |
+| `/changes/:id` | 变更详情、检查结果、处理时间线、可选助手 |
 | `/approvals` | 审批 |
 | `/risks` | 风险项 |
 | `/policies` | 规则 |
-| `/apps` | 纳管的服务 |
+| `/apps` | 服务列表 |
 | `/audits` | 审计 |
 | `/settings` | 设置 |
 
@@ -21,14 +25,25 @@
 
 ## 开发
 
-需要本机先跑 ChangeGuard 后端（默认 `http://localhost:8080`）。页面请求走相对路径 `/api`，开发时把 Vite 反代过去，或用 nginx 一起托管。
+需要本机先跑 ChangeGuard 后端。页面请求走相对路径 `/api`，退出登录使用 `/auth/logout`；开发时设置 `CG_API`，Vite 会代理两类路径。未设置时不会启用代理。
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+CG_API=http://127.0.0.1:8080 npm run dev
 npm run build        # 类型检查 + 打包
 npm run preview      # 预览 dist
 ```
+
+Windows PowerShell：
+
+```powershell
+$env:CG_API = 'http://127.0.0.1:8080'
+npm.cmd run dev
+npm.cmd test
+npm.cmd run build
+```
+
+共享状态与消费统计测试使用 Node 内置测试器和 TypeScript 类型剥离，需要 Node 22.6+，建议本地和 CI 使用 Node 24。本次验证版本为 Node 24.15.0。
 
 ## 部署
 
@@ -36,4 +51,4 @@ npm run preview      # 预览 dist
 npm run build
 ```
 
-把 `dist/` 交给 nginx（或其它静态服务器），`/api` 反代到 dbguard。后端仓库的 `deploy/nginx.conf` 有一份现成配置。
+把 `dist/` 交给 nginx（或其它静态服务器），`/api` 和 `/auth` 都需要反代到 dbguard，否则退出登录不能清除后端会话。后端仓库的 `deploy/nginx.conf` 是内嵌页面的反代示例，并非这套 Vue 静态站点的完整配置；部署时还需配置静态目录与 HTTPS。

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { STATUS_LABEL } from '@/lib/labels'
 /* 状态/风险指示器：点 + 文字，无辉光 */
 const props = withDefaults(defineProps<{
   type?: 'risk' | 'status' | 'plain'
@@ -15,12 +16,12 @@ function tone(v: string): { c: string; label: string } {
     return { c: 'unknown', label: '待定' }
   }
   if (s === 'OK' || s === 'COMPLETED' || s === 'APPROVED' || s === 'ACTIVE' || s === 'PASSED' || s === 'REAL') {
-    const zh: Record<string, string> = { OK: '正常', COMPLETED: '已完成', APPROVED: '已批准', ACTIVE: '运行中', PASSED: '通过', REAL: '真实' }
+    const zh: Record<string, string> = { OK: '正常', COMPLETED: STATUS_LABEL.COMPLETED, APPROVED: '已批准', ACTIVE: '运行中', PASSED: '通过', REAL: '真实' }
     return { c: 'ok', label: zh[s] || '正常' }
   }
-  if (s === 'FAILED' || s === 'REJECTED' || s === 'ERROR' || s === 'CRITICAL') return { c: 'err', label: v || '异常' }
-  if (s === 'WAITING_APPROVAL' || s === 'PENDING' || s === 'QUEUED' || s === 'CHECKING') return { c: 'warn', label: v || '处理中' }
-  return { c: 'info', label: v || '未知' }
+  if (s === 'FAILED' || s === 'REJECTED' || s === 'ERROR' || s === 'CRITICAL') return { c: 'err', label: STATUS_LABEL[s] || v || '异常' }
+  if (s === 'WAITING_APPROVAL' || s === 'PENDING' || s === 'QUEUED' || s === 'CHECKING') return { c: 'warn', label: STATUS_LABEL[s] || v || '处理中' }
+  return { c: 'info', label: STATUS_LABEL[s] || v || '未知' }
 }
 </script>
 

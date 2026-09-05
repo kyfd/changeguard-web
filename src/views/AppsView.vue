@@ -28,12 +28,12 @@ function changeCount(a: any) {
   <div class="page">
     <div class="page-head">
       <div>
-        <div class="page-title">纳管服务</div>
-        <div class="page-sub">受治理的应用资产 · {{ ws.apps.length }} 个服务</div>
+        <div class="page-title">服务</div>
+        <div class="page-sub">应用列表 · {{ ws.apps.length }} 个服务</div>
       </div>
     </div>
 
-    <div v-if="!ws.apps.length" class="empty-full">暂无纳管服务</div>
+    <div v-if="!ws.apps.length" class="empty-full">暂无服务</div>
     <div v-else class="ledger">
       <div class="ledger-head" aria-hidden="true">
         <span>服务</span>
