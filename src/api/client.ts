@@ -159,7 +159,8 @@ export const api = {
   login: (p: any) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(p) }),
   register: (p: any) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(p) }),
   acceptInvite: (p: any) => request('/api/auth/invitations/accept', { method: 'POST', body: JSON.stringify(p) }),
-  logout: () => request('/auth/logout', { method: 'POST', body: '{}' }),
+  // 后端退出后重定向首页，接受 HTML 使开发服务器也能处理该跳转。
+  logout: () => request('/auth/logout', { method: 'POST', headers: { Accept: 'text/html' }, body: '{}' }),
 
   // 核心
   dashboard: () => request<Dashboard>('/api/dashboard'),

@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspace'
+import { consumptionStats } from '@/lib/labels'
 import type { Change } from '@/api/types'
 
 /* 总览页指标，全部从工作区数据派生 */
@@ -47,11 +48,14 @@ export function usePanorama() {
     { label: '检查整改', statuses: ['CHECKING', 'CHECK_FAILED', 'READY_FOR_EXPERIMENT'], route: 'changes' },
     { label: '预发布验证', statuses: ['EXPERIMENT_QUEUED', 'EXPERIMENT_RUNNING'], route: 'risks' },
     { label: '等待审批', statuses: ['WAITING_APPROVAL'], route: 'approvals' },
-    { label: '已闭环', statuses: ['APPROVED', 'COMPLETED', 'REJECTED'], route: 'changes' },
+    { label: '已批准', statuses: ['APPROVED'], route: 'changes' },
+    { label: '通行证已消费', statuses: ['COMPLETED'], route: 'changes' },
+    { label: '已拒绝', statuses: ['REJECTED'], route: 'changes' },
   ].map(s => ({ ...s, count: changes.value.filter(c => s.statuses.includes(c.status)).length })))
 
   const pending = computed(() => changes.value.filter(c => c.status === 'WAITING_APPROVAL').length)
-  const closed = computed(() => changes.value.filter(c => ['APPROVED', 'COMPLETED'].includes(c.status)).length)
+  const consumption = computed(() => consumptionStats(changes.value))
+  const closed = computed(() => consumption.value.consumed)
   const experiments = computed(() => changes.value.filter(c => c.experiment).length)
   const enabledPolicies = computed(() => (ws.policies || []).filter(p => p.enabled !== false).length)
 
@@ -63,7 +67,7 @@ export function usePanorama() {
     return { level: 'NOMINAL', label: '平稳', tone: 'green' }
   })
 
-  const closureRate = computed(() => (total.value ? Math.round(closed.value / total.value * 100) : 0))
+  const closureRate = computed(() => consumption.value.percent)
 
   // 拓扑卫星节点（中央核心周围的业务节点）
   const nodes = computed(() => [
@@ -71,7 +75,7 @@ export function usePanorama() {
     { key: 'approvals', label: '待审批', value: pending.value, route: 'approvals', icon: 'check-circle', angle: 72 },
     { key: 'risks', label: '高危', value: highRisk.value, route: 'risks', icon: 'shield-alert', angle: 144 },
     { key: 'policies', label: '规则', value: ws.policies?.length || 0, route: 'policies', icon: 'shield', angle: 216 },
-    { key: 'apps', label: '纳管', value: ws.apps?.length || 0, route: 'apps', icon: 'server', angle: 288 },
+    { key: 'apps', label: '服务', value: ws.apps?.length || 0, route: 'apps', icon: 'server', angle: 288 },
   ])
 
   return {

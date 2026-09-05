@@ -25,7 +25,7 @@ const CORE: NodeDef[] = [
   { id: 'verify', label: '验证', ring: 0, a0: 1.7, route: 'risks' },
   { id: 'approve', label: '审批', ring: 0, a0: 3.8, route: 'approvals' },
   { id: 'audit', label: '审计', ring: 1, a0: 0.35, route: 'audits' },
-  { id: 'rollback', label: '回滚', ring: 1, a0: 1.9, route: 'changes' },
+  { id: 'rollback', label: '已拒绝', ring: 1, a0: 1.9, route: 'changes' },
   { id: 'svc', label: '服务', ring: 1, a0: 3.5, route: 'apps' },
   { id: 'evidence', label: '证据', ring: 1, a0: 5.1, route: 'audits' },
   { id: 'sql', label: 'SQL', ring: 2, a0: 0.15, latin: true, route: 'risks' },
@@ -33,7 +33,7 @@ const CORE: NodeDef[] = [
   { id: 'cfg', label: '配置', ring: 2, a0: 2.25, route: 'policies' },
   { id: 'api', label: 'API', ring: 2, a0: 3.3, latin: true, route: 'changes' },
   { id: 'gate', label: '门禁', ring: 2, a0: 4.35, route: 'approvals' },
-  { id: 'pass', label: '通行证', ring: 2, a0: 5.4, route: 'changes' },
+  { id: 'pass', label: '已消费', ring: 2, a0: 5.4, route: 'changes' },
 ]
 
 const EDGES: [string, string][] = [
@@ -231,7 +231,7 @@ function draw() {
     const hovered = hoverId === n.id
 
     ctx.beginPath()
-    rrect(ctx, p.x - nodeR / 2, p.y - nodeR / 2, nodeR, nodeR, 2)
+    rrect(ctx, p.x - nodeR / 2, p.y - nodeR / 2, nodeR, 2)
     if (hovered) ctx.fillStyle = pal.brand
     else if (risk) ctx.fillStyle = pal.cinnabar
     else if (warn) ctx.fillStyle = pal.amber

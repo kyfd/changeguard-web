@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-// 科技感前端构建配置
+// Vue 控制台构建配置
 // 产物用相对路径 base，便于 nginx 任意子路径托管
 export default defineConfig({
   plugins: [vue()],
@@ -27,9 +27,12 @@ export default defineConfig({
     port: 5173,
     host: true,
     // 本地开发时把 /api 转发到真实后端，通过 CG_API 指定，例如：
-    //   CG_API=https://liufengxi.top npm run dev
+    //   CG_API=http://127.0.0.1:8080 npm run dev
     proxy: process.env.CG_API
-      ? { '/api': { target: process.env.CG_API, changeOrigin: true, secure: true } }
+      ? {
+          '/api': { target: process.env.CG_API, changeOrigin: true, secure: true },
+          '/auth': { target: process.env.CG_API, changeOrigin: true, secure: true },
+        }
       : undefined,
   },
 })
