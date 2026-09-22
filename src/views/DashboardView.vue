@@ -95,13 +95,25 @@ const submittedBars = computed(() => {
 const rejectionSeries = computed(() => seriesPoints(t => (t.rejection_rate == null || t.rejection_rate < 0 ? null : t.rejection_rate as number * 100), 100, 40))
 const highRiskSeries = computed(() => seriesPoints(t => (t.high_risk_rate == null || t.high_risk_rate < 0 ? null : t.high_risk_rate as number * 100), 100, 40))
 const approvalSeries = computed(() => seriesPoints(t => (t.approval_hours == null || t.approval_hours < 0 ? null : t.approval_hours as number), 100, 40))
-function lastValue(getter: (t: any) => number | null, unit = '') {
+/** 取「最近一个有样本的月份」的指标值，同时说明它取自哪个自然月。
+ *
+ * 只返回值不够：这三个数字是从右往左找第一个有样本的月份，不一定是最新月份。
+ * 界面若不说明取自哪个月，读者会把它当成最新月（甚至全量）的值来判断——
+ * 近期无定局样本时，显示的其实是上一个月的数字。 */
+function lastValueWithMonth(getter: (t: any) => number | null, unit = '') {
   for (let i = trends.value.length - 1; i >= 0; i--) {
-    const v = getter(trends.value[i])
-    if (v != null && v >= 0) return unit === '%' ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}${unit}`
+    const month = trends.value[i]
+    const v = getter(month)
+    if (v != null && v >= 0) {
+      const text = unit === '%' ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}${unit}`
+      return { text, month: String(month.month || ''), isLatest: i === trends.value.length - 1 }
+    }
   }
-  return '—'
+  return { text: '—', month: '', isLatest: false }
 }
+const rejectionValue = computed(() => lastValueWithMonth(t => (t.rejection_rate < 0 ? null : t.rejection_rate), '%'))
+const highRiskValue = computed(() => lastValueWithMonth(t => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%'))
+const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours < 0 ? null : t.approval_hours)))
 </script>
 
 <template>
@@ -165,7 +177,8 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
         </div>
         <div class="trend">
           <div class="kicker">拒绝率（定局口径）</div>
-          <strong class="now mono">{{ lastValue(t => (t.rejection_rate < 0 ? null : t.rejection_rate), '%') }}</strong>
+          <strong class="now mono">{{ rejectionValue.text }}</strong>
+          <div class="trend-src mono">{{ rejectionValue.month ? (rejectionValue.isLatest ? rejectionValue.month + ' 当月' : rejectionValue.month + ' · 最新月无定局样本') : '近 6 个月无样本' }}</div>
           <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
             <polyline v-if="rejectionSeries" :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.5" />
             <circle v-for="(p, i) in rejectionSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--cinnabar)" />
@@ -173,7 +186,8 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
         </div>
         <div class="trend">
           <div class="kicker">高危占比</div>
-          <strong class="now mono">{{ lastValue(t => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%') }}</strong>
+          <strong class="now mono">{{ highRiskValue.text }}</strong>
+          <div class="trend-src mono">{{ highRiskValue.month ? (highRiskValue.isLatest ? highRiskValue.month + ' 当月' : highRiskValue.month + ' · 最新月无提交') : '近 6 个月无提交' }}</div>
           <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
             <polyline v-if="highRiskSeries" :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.5" />
             <circle v-for="(p, i) in highRiskSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--amber)" />
@@ -181,7 +195,8 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
         </div>
         <div class="trend">
           <div class="kicker">平均决策时长（小时）</div>
-          <strong class="now mono">{{ lastValue(t => (t.approval_hours < 0 ? null : t.approval_hours)) }}</strong>
+          <strong class="now mono">{{ approvalValue.text }}</strong>
+          <div class="trend-src mono">{{ approvalValue.month ? (approvalValue.isLatest ? approvalValue.month + ' 当月' : approvalValue.month + ' · 最新月无审批定论') : '近 6 个月无审批定论' }}</div>
           <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
             <polyline v-if="approvalSeries" :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.5" />
             <circle v-for="(p, i) in approvalSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--brand)" />
@@ -276,6 +291,8 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
 .trend { min-width: 0; }
 .trend .kicker { margin-bottom: 8px; }
 .trend .now { display: block; font-size: var(--fs-20); color: var(--text-strong); font-weight: var(--fw-semibold); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+/* 指标数字的来源月份：必须和数字一样醒目，否则读者会把它当成最新月的值。 */
+.trend .trend-src { display: block; font-size: var(--fs-11); color: var(--text-faint); margin-bottom: 6px; }
 .spark { display: block; width: 100%; height: 44px; }
 .bars { display: flex; align-items: flex-end; gap: 6px; height: 74px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
