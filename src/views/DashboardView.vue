@@ -63,22 +63,37 @@ onMounted(async () => {
 })
 const hasTrends = computed(() => trendsLoaded.value && trends.value.some((t: any) => (t.submitted || 0) > 0))
 
+/* 折线图数据。
+ *
+ * 只有 1 个有效点时折线没有意义：它渲染成一根贴着边的短划线，
+ * 看起来像图表坏了，而不是"样本不足"。所以少于 2 个点直接返回 null，
+ * 由界面显示"样本不足，无法绘制趋势"。
+ *
+ * y 轴不归一化到 0：这些是比率/时长，关注相对变化；
+ * 但会留出上下边距，避免折线贴死边框。
+ */
 function seriesPoints(getter: (t: any) => number | null, width: number, height: number) {
   const values = trends.value.map(t => getter(t))
-  const valid = values.filter((v): v is number => v != null)
-  if (valid.length === 0) return null
-  const max = Math.max(...valid, 0.0001)
-  const step = trends.value.length > 1 ? width / (trends.value.length - 1) : 0
-  const pts = values.map((v, i) => {
-    if (v == null) return null
-    const x = trends.value.length > 1 ? i * step : width / 2
-    const y = height - (v / max) * (height - 6) - 3
-    return { x, y, v }
-  }).filter(Boolean) as { x: number; y: number; v: number }[]
-  if (pts.length < 1) return null
+  const pts = values
+    .map((v, i) => (v == null ? null : { x: i, y: v, v }))
+    .filter(Boolean) as { x: number; y: number; v: number }[]
+  if (pts.length < 2) return null
+
+  const lo = Math.min(...pts.map(p => p.v))
+  const hi = Math.max(...pts.map(p => p.v))
+  // 所有点同值时不存在"趋势"：画一条水平线即可，但要避开除零。
+  const span = hi - lo
+  const pad = 4
+  const usable = height - pad * 2
+  const step = width / (trends.value.length - 1)
+  const placed = pts.map(p => ({
+    x: p.x * step,
+    y: span === 0 ? height / 2 : pad + ((hi - p.v) / span) * usable,
+    v: p.v,
+  }))
   return {
-    line: pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
-    dots: pts,
+    line: placed.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    dots: placed,
   }
 }
 const submittedBars = computed(() => {
@@ -179,28 +194,31 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
           <div class="kicker">拒绝率（定局口径）</div>
           <strong class="now mono">{{ rejectionValue.text }}</strong>
           <div class="trend-src mono">{{ rejectionValue.month ? (rejectionValue.isLatest ? rejectionValue.month + ' 当月' : rejectionValue.month + ' · 最新月无定局样本') : '近 6 个月无样本' }}</div>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline v-if="rejectionSeries" :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.5" />
-            <circle v-for="(p, i) in rejectionSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--cinnabar)" />
+          <svg v-if="rejectionSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in rejectionSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--cinnabar)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
         <div class="trend">
           <div class="kicker">高危占比</div>
           <strong class="now mono">{{ highRiskValue.text }}</strong>
           <div class="trend-src mono">{{ highRiskValue.month ? (highRiskValue.isLatest ? highRiskValue.month + ' 当月' : highRiskValue.month + ' · 最新月无提交') : '近 6 个月无提交' }}</div>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline v-if="highRiskSeries" :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.5" />
-            <circle v-for="(p, i) in highRiskSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--amber)" />
+          <svg v-if="highRiskSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in highRiskSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--amber)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
         <div class="trend">
           <div class="kicker">平均决策时长（小时）</div>
           <strong class="now mono">{{ approvalValue.text }}</strong>
           <div class="trend-src mono">{{ approvalValue.month ? (approvalValue.isLatest ? approvalValue.month + ' 当月' : approvalValue.month + ' · 最新月无审批定论') : '近 6 个月无审批定论' }}</div>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline v-if="approvalSeries" :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.5" />
-            <circle v-for="(p, i) in approvalSeries?.dots || []" :key="i" :cx="p.x" :cy="p.y" r="1.4" fill="var(--brand)" />
+          <svg v-if="approvalSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in approvalSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--brand)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
       </div>
     </section>
@@ -293,7 +311,10 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
 .trend .now { display: block; font-size: var(--fs-20); color: var(--text-strong); font-weight: var(--fw-semibold); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
 /* 指标数字的来源月份：必须和数字一样醒目，否则读者会把它当成最新月的值。 */
 .trend .trend-src { display: block; font-size: var(--fs-11); color: var(--text-faint); margin-bottom: 6px; }
-.spark { display: block; width: 100%; height: 44px; }
+.spark { display: block; width: 100%; height: 44px; overflow: visible; }
+/* 有效点少于两个时不画折线，改显示一句说明。
+   一根孤零零的短划线会被读成"图表坏了"，而不是"样本不足"。 */
+.spark-empty { display: flex; align-items: center; height: 44px; font-size: var(--fs-11); color: var(--text-faint); }
 .bars { display: flex; align-items: flex-end; gap: 6px; height: 74px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
 .bar-stack { flex: 1; width: 100%; max-width: 26px; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 2px; overflow: hidden; background: var(--surface-2); }
