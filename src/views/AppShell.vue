@@ -28,6 +28,9 @@ const navGroups = [
       { to: 'changes', label: '变更工单', icon: 'code' },
       { to: 'approvals', label: '审批中心', icon: 'check-circle' },
       { to: 'risks', label: '风险中心', icon: 'shield-alert' },
+      // 变更准备工作台是**独立文档**（/agent/，由 Go 服务同源提供），
+      // 刻意不走 vue-router：它是另一个应用，不是本控制台的一个视图。
+      { to: '/agent/', label: '变更准备', icon: 'layers', external: true },
     ],
   },
   {
@@ -92,8 +95,13 @@ function goHit(hit: { to: any }) {
   router.push(hit.to)
 }
 
-function goNav(to: string) {
+function goNav(to: string, external?: boolean) {
   mobileOpen.value = false
+  // 外部项是另一个应用的绝对路径：整页跳转，不走 hash 路由。
+  if (external) {
+    window.location.assign(to)
+    return
+  }
   if (route.name !== to) router.push({ name: to })
 }
 
@@ -132,7 +140,7 @@ onBeforeUnmount(() => {
             type="button"
             class="nav-item"
             :class="{ 'router-link-active': route.name === item.to }"
-            @click="goNav(item.to)"
+            @click="goNav(item.to, item.external)"
           >
             <span class="nav-ico"><TechIcon :name="item.icon" :size="15" /></span>
             <span class="nav-label">{{ item.label }}</span>

@@ -65,19 +65,22 @@ const hasTrends = computed(() => trendsLoaded.value && trends.value.some((t: any
 
 /* 折线图数据。
  *
- * 只有 1 个有效点时折线没有意义：它渲染成一根贴着边的短划线，
- * 看起来像图表坏了，而不是"样本不足"。所以少于 2 个点直接返回 null，
- * 由界面显示"样本不足，无法绘制趋势"。
+ * 阈值是**至少 3 个有效点**，不是 2 个：
+ *   - 1 个点：一根贴边的短划线，看起来像图表坏了；
+ *   - 2 个点：一条直线，只能说明"涨了/跌了一次"，那不是趋势；
+ *   - 6 个月窗口里只有 2 个月有数据时，这条线横跨 4 个空月份，
+ *     视觉上暗示了一段并不存在的变化过程。
+ * 少于 3 个点返回 null，由界面显示"样本不足，无法绘制趋势"。
  *
- * y 轴不归一化到 0：这些是比率/时长，关注相对变化；
- * 但会留出上下边距，避免折线贴死边框。
+ * y 轴按有效点的取值范围缩放（不归一到 0）：这些是比率/时长，关注相对变化；
+ * 同时留出上下边距，避免折线贴死边框。
  */
 function seriesPoints(getter: (t: any) => number | null, width: number, height: number) {
   const values = trends.value.map(t => getter(t))
   const pts = values
     .map((v, i) => (v == null ? null : { x: i, y: v, v }))
     .filter(Boolean) as { x: number; y: number; v: number }[]
-  if (pts.length < 2) return null
+  if (pts.length < 3) return null
 
   const lo = Math.min(...pts.map(p => p.v))
   const hi = Math.max(...pts.map(p => p.v))
