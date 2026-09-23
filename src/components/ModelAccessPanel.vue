@@ -195,7 +195,7 @@ onMounted(load)
 </template>
 
 <style scoped>
-.wide-panel { min-width: 0; overflow: hidden; margin-bottom: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.wide-panel { flex-shrink: 0; min-width: 0; overflow-x: clip; margin-bottom: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); }
 .wide-panel > header { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
 .wide-panel h3 { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); }
 .wide-panel h3 i { width: 2px; height: 14px; background: var(--brand); border-radius: 1px; }

@@ -331,6 +331,9 @@ onMounted(load)
 
 <style scoped>
 @import './page.css';
+.page { overflow-y: auto; }
+.page > * { flex-shrink: 0; }
+.page > .settings-grid { flex: none; overflow: visible; }
 .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-3); align-content: start; align-items: start; margin-bottom: var(--sp-3); }
 .spanel { padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--sp-3); }
 :root[data-theme="light"] .spanel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
