@@ -7,6 +7,7 @@ import TechIcon from '@/components/TechIcon.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
 import { useTheme, type ThemePref } from '@/composables/useTheme'
+import ModelAccessPanel from '@/components/ModelAccessPanel.vue'
 
 const ws = useWorkspaceStore()
 const auth = useAuthStore()
@@ -194,16 +195,11 @@ onMounted(load)
       <article class="spanel">
         <h3><i></i>模型分析</h3>
         <div v-if="aiConfig" class="kv-list">
-          <div class="kv"><span>服务状态</span>
-            <StatusBadge type="status" :value="aiConfig.llm_configured ? 'OK' : 'PENDING'" size="sm">
-              {{ aiConfig.llm_configured ? '已配置' : '未配置' }}
-            </StatusBadge>
-          </div>
-          <div class="kv"><span>供应商 / 模型</span><span class="mono">{{ aiConfig.llm_provider || '—' }} · {{ aiConfig.llm_model || '—' }}</span></div>
-          <div class="kv"><span>每日限额</span><span class="mono">个人 {{ aiConfig.daily_analysis_limit }} 次 · 企业 {{ aiConfig.daily_organization_analysis_limit }} 次</span></div>
+          <div class="kv"><span>分析模式</span><span class="mono">{{ aiConfig.enterprise_llm_api ? 'Agent · 工具调用' : '规则归纳' }}</span></div>
+          <div class="kv"><span>每日限额</span><span class="mono">个人 {{ aiConfig.daily_analysis_limit }} · 企业 {{ aiConfig.daily_organization_analysis_limit }}</span></div>
         </div>
         <p v-else class="muted">配置状态暂不可用，请刷新重试。</p>
-        <p class="muted small">AI 分析用于变更单的风险解读与整改建议，额度由服务端配置控制。</p>
+        <p class="muted small">具体服务商、模型与 Key 在下方「模型接入」中配置。</p>
       </article>
 
       <article class="spanel">
@@ -215,6 +211,8 @@ onMounted(load)
         <p v-if="auth.user?.enterprise_admin" class="muted small">你是企业管理员，可管理下方成员与邀请。</p>
       </article>
     </div>
+
+    <ModelAccessPanel :is-admin="isAdmin" />
 
     <!-- 集成接入指引 -->
     <section class="wide-panel">
