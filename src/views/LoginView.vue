@@ -57,7 +57,11 @@ async function submit() {
     } else {
       await auth.acceptInvite({ token: inviteCode.value, name: name.value, password: password.value })
     }
-    await ws.load(true)
+    // 认证成功即进入控制台；工作区在后台加载。先清掉上一会话的数据，
+    // 使 AppShell 显示加载态而不是旧数据 / 空列表。AppShell 挂载时的 ws.load()
+    // 会复用这次进行中的请求，不会重复拉取。加载失败由 store.error 在壳层提示。
+    ws.clear()
+    ws.load(true).catch(() => {})
     router.push({ name: 'dashboard' })
   } catch (e: any) {
     error.value = e instanceof APIError ? e.message : '操作失败，请重试'

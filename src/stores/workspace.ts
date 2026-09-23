@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { api, setSession, APIError } from '@/api/client'
+import { api, setSession, onSoftError, APIError } from '@/api/client'
 import type { Workspace, Session } from '@/api/types'
 
 /* 认证 store */
@@ -53,6 +53,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const loading = ref(false)
   const error = ref('')
   const loadedAt = ref(0)
+  /** 全量加载中降级为空数据的接口（"接口: 原因"），每次全量加载后替换为本次结果。 */
+  const workspaceErrors = ref<string[]>([])
+  /** 工作区之外的 soft 调用（如模型用量）失败，独立保存，不被全量加载覆盖。 */
+  const auxErrors = ref<string[]>([])
+  const loadErrors = computed(() => [...workspaceErrors.value, ...auxErrors.value.filter(e => !workspaceErrors.value.includes(e))])
+
+  onSoftError(entry => { if (!auxErrors.value.includes(entry)) auxErrors.value.push(entry) })
 
   const changes = computed(() => data.value?.changes || [])
   const apps = computed(() => data.value?.apps || [])
@@ -74,10 +81,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     error.value = ''
     activeLoad = (async () => {
       try {
-        data.value = await api.loadWorkspace()
+        const errors: string[] = []
+        data.value = await api.loadWorkspace(errors)
+        workspaceErrors.value = errors
         loadedAt.value = Date.now()
       } catch (e: any) {
         error.value = e instanceof APIError ? e.message : '数据加载失败'
+        workspaceErrors.value = [] // 整体失败由 error 呈现，不再显示上一轮的局部告警
         throw e
       } finally {
         loading.value = false
@@ -101,7 +111,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     else data.value.changes.unshift(change)
   }
 
-  function clear() { data.value = null; loadedAt.value = 0; error.value = '' }
+  function clear() { data.value = null; loadedAt.value = 0; error.value = ''; workspaceErrors.value = []; auxErrors.value = [] }
 
-  return { data, loading, error, loadedAt, changes, apps, users, policies, audits, dashboard, load, replaceChange, clear }
+  return { data, loading, error, loadErrors, loadedAt, changes, apps, users, policies, audits, dashboard, load, replaceChange, clear }
 })

@@ -31,7 +31,6 @@ export interface Passport {
   consumeState?: string
   revokedAt?: string
   evidenceState?: string
-  verifyPath?: string
 }
 
 export interface Change {
@@ -41,8 +40,6 @@ export interface Change {
   risk: RiskLevel
   application_id?: string
   application_name?: string
-  owner?: string
-  owner_name?: string
   reviewer_name?: string
   created_at?: string
   updated_at?: string

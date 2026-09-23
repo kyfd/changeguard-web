@@ -23,7 +23,7 @@ const change = computed(() => detail.value || ws.changes.find(c => c.id === chan
 const summary = computed(() => checkSummary(change.value))
 const riskLabel: Record<string, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', UNKNOWN: '待定' }
 const evLabel: Record<string, string> = { REAL: '真实', NOT_RUN: '未验证', FAILED: '失败', DEMO_ONLY: '演示' }
-function owner(c: any) { return c.owner_name || c.owner || c.reviewer_name || '—' }
+function owner(c: any) { return c.reviewer_name || c.submitter_name || '—' }
 function fmt(t?: string) {
   if (!t) return '—'
   const value = new Date(t)
@@ -179,7 +179,7 @@ const findingState: Record<string, [string, string]> = {
         <!-- 确定性规则检查 -->
         <div class="dpanel">
           <div class="dpanel-head"><h3>确定性规则检查</h3><span>{{ change.findings?.length || 0 }} 项证据</span></div>
-          <div v-if="!change.findings?.length" class="empty-full">{{ change.check_run || change.checkRun ? summary + '；本次未返回发现项。' : '暂无规则检查记录。' }}</div>
+          <div v-if="!change.findings?.length" class="empty-full">{{ change.check_run ? summary + '；本次未返回发现项。' : '暂无规则检查记录。' }}</div>
           <div class="finding-list" v-else>
             <div v-for="f in change.findings" :key="f.id" class="finding-card">
               <span class="finding-level" :class="String(f.severity || '').toLowerCase()">{{ riskLabel[f.severity] || '—' }}</span>

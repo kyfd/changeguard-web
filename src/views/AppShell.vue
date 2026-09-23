@@ -63,7 +63,7 @@ const hits = computed(() => {
   if (q.length < 1) return [] as { kind: string; title: string; sub: string; to: any }[]
   const out: { kind: string; title: string; sub: string; to: any }[] = []
   for (const c of ws.changes) {
-    const blob = `${c.title || ''} ${c.summary || ''} ${c.id || ''} ${c.application_name || ''} ${c.owner_name || ''}`.toLowerCase()
+    const blob = `${c.title || ''} ${c.summary || ''} ${c.id || ''} ${c.application_name || ''} ${c.reviewer_name || ''} ${c.submitter_name || ''}`.toLowerCase()
     if (blob.includes(q)) {
       out.push({
         kind: '变更',
@@ -213,6 +213,10 @@ onBeforeUnmount(() => {
           <span>正在读取工作区数据…</span>
         </div>
         <div v-if="ws.error" class="workspace-error" role="alert">{{ ws.error }} <button @click="ws.load(true).catch(() => {})">重试</button></div>
+        <div v-else-if="ws.loadErrors.length" class="workspace-warn" role="status" :title="ws.loadErrors.join('\n')">
+          部分数据未能加载（{{ ws.loadErrors.length }} 项），页面可能不完整
+          <button @click="ws.load(true).catch(() => {})">重试</button>
+        </div>
         <RouterView v-if="!ws.loading || ws.data" v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -429,6 +433,8 @@ onBeforeUnmount(() => {
 }
 .workspace-error { padding: .7rem; margin-bottom: .7rem; color: var(--cinnabar); background: var(--cinnabar-soft); }
 .workspace-error button { text-decoration: underline; margin-left: .5rem; }
+.workspace-warn { padding: .4rem .7rem; margin-bottom: .7rem; font-size: var(--fs-12); color: var(--amber); background: var(--amber-soft); }
+.workspace-warn button { text-decoration: underline; margin-left: .5rem; }
 @media (max-width: 600px) {
   .topbar { padding: 0 12px; gap: 8px; }
   .topbar-left, .topbar-right { gap: 6px; min-width: 0; }

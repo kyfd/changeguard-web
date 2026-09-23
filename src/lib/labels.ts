@@ -33,8 +33,9 @@ export function stepIndex(status?: string) {
   return i < 0 ? 0 : i
 }
 
+/** 负责人：已审批用审批人，未审批时回落到提交人（model.ChangeRequest 无 owner 字段）。 */
 export function ownerOf(c: any) {
-  return c?.owner_name || c?.owner || c?.reviewer_name || '—'
+  return c?.reviewer_name || c?.submitter_name || '—'
 }
 
 export function fmtTime(t?: string, withSeconds = false) {
@@ -61,7 +62,7 @@ export function passportStepLabel(key: string, status: string, label: string) {
 
 /** 以检查运行结论为准，发现项的整改状态不能代替检查结果。 */
 export function checkSummary(change: any): string {
-  const check = change?.check_run || change?.checkRun
+  const check = change?.check_run
   if (!check) return '暂无规则检查记录'
   const blocking = Number(check.blocking)
   if (Number.isFinite(blocking) && blocking > 0) return `最近检查有 ${blocking} 项阻断，请核对检查结果`
