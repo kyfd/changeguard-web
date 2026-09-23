@@ -4,11 +4,12 @@ withDefaults(defineProps<{
   size?: 'sm' | 'md' | 'lg'
   block?: boolean
   loading?: boolean
-}>(), { variant: 'primary', size: 'md', block: false, loading: false })
+  disabled?: boolean
+}>(), { variant: 'primary', size: 'md', block: false, loading: false, disabled: false })
 </script>
 
 <template>
-  <button class="nb" :class="[`nb-${variant}`, `nb-${size}`, { 'nb-block': block, 'nb-loading': loading }]" :disabled="loading">
+  <button class="nb" :class="[`nb-${variant}`, `nb-${size}`, { 'nb-block': block, 'nb-loading': loading }]" :disabled="loading || disabled">
     <span class="nb-content"><slot /></span>
   </button>
 </template>

@@ -155,10 +155,16 @@ async function load() {
   try { const c: any = await api.llmConfig(); llmOn.value = c?.source === 'organization' && c?.enabled === true; llmModel.value = c?.model || '' } catch {}
   await Promise.all([loadMembers(), loadInvites()])
 }
+const entName = computed(() => String(ent.value?.name || '').trim())
+const saveMsg = ref('')
 async function save() {
-  if (!ent.value) return
-  saving.value = true
-  try { await api.updateEnterprise({ name: ent.value.name }); await load() } catch (e: any) { alert(e?.message || '保存失败') }
+  if (!entName.value || saving.value) return
+  saving.value = true; saveMsg.value = ''
+  try {
+    ent.value = await api.updateEnterprise({ name: entName.value })
+    saveMsg.value = '已保存'
+    setTimeout(() => { saveMsg.value = '' }, 2000)
+  } catch (e: any) { saveMsg.value = e?.message || '保存失败' }
   finally { saving.value = false }
 }
 onMounted(load)
@@ -193,7 +199,10 @@ onMounted(load)
         <label class="sfield"><span>企业名称</span><input v-model="ent.name" placeholder="企业名称" /></label>
         <label class="sfield"><span>企业标识</span><span class="id-cell">{{ ent?.id || '—' }}</span></label>
         <label class="sfield"><span>我的角色</span><span>{{ auth.role }}</span></label>
-        <NeonButton :loading="saving" @click="save"><TechIcon name="check-circle" :size="15" /> 保存</NeonButton>
+        <div class="save-row">
+          <span v-if="saveMsg" class="save-msg" :class="{ ok: saveMsg === '已保存' }" role="status">{{ saveMsg }}</span>
+          <NeonButton :loading="saving" :disabled="!isAdmin || !entName" @click="save"><TechIcon name="check-circle" :size="15" /> 保存</NeonButton>
+        </div>
       </article>
 
       <article class="spanel">
@@ -339,8 +348,13 @@ onMounted(load)
 .page { overflow-y: auto; }
 .page > * { flex-shrink: 0; }
 .page > .settings-grid { flex: none; overflow: visible; }
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-3); align-content: start; align-items: start; margin-bottom: var(--sp-3); }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-3); align-content: start; align-items: stretch; margin-bottom: var(--sp-3); }
+.spanel > :last-child { margin-top: auto; }
+.spanel > h3 + :last-child { margin-top: 0; }
 .spanel { padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--sp-3); }
+.save-row { display: flex; flex-direction: column; gap: 6px; }
+.save-msg { font-size: var(--fs-12); color: var(--cinnabar); }
+.save-msg.ok { color: var(--jade); }
 :root[data-theme="light"] .spanel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
 .spanel h3 { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); }
 .spanel h3 i { width: 2px; height: 14px; background: var(--brand); border-radius: 1px; }
