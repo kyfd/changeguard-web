@@ -48,7 +48,7 @@ const collapsed = ref(false)
 const mobileOpen = ref(false)
 const query = ref('')
 const searchOpen = ref(false)
-const isPanorama = computed(() => false) // 总览已改为常规页面，保留侧栏与顶栏
+const isPanorama = computed(() => route.name === 'panorama')
 const pendingCount = computed(() => ws.changes.filter(c => c.status === 'WAITING_APPROVAL').length)
 const pageTitle = computed(() => (route.meta.title as string) || 'ChangeGuard')
 const clock = ref('')
