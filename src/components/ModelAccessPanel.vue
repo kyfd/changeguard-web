@@ -8,6 +8,7 @@ import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
 
 const props = defineProps<{ isAdmin: boolean }>()
+const emit = defineEmits<{ changed: [cfg: any] }>()
 
 type Preset = { id: string; name: string; provider: string; base_url: string; model: string; hint?: string }
 const EXTRA_PRESETS: Preset[] = [
@@ -93,6 +94,7 @@ async function save(enabled = true) {
   busy.value = enabled ? 'save' : 'disable'; notice.value = null
   try {
     cfg.value = await api.saveLLMConfig({ ...payloadBase(), enabled })
+    emit('changed', cfg.value)
     form.value.api_key = ''
     form.value.enabled = enabled
     notice.value = { tone: 'ok', text: enabled ? '已保存并通过连通性检测，新提交的变更将使用该模型分析' : '已关闭企业模型，分析将使用本地规则归纳' }

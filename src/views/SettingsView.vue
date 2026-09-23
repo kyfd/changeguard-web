@@ -20,6 +20,9 @@ const themeOpts: { k: ThemePref; label: string }[] = [
 const ent = ref<any>({})
 const integrations = ref<any>(null)
 const aiConfig = ref<any>(null)
+/* 企业是否真正接入模型：以 /api/enterprise/llm 为准（config/status 的字段反映的是平台级配置） */
+const llmOn = ref(false)
+const llmModel = ref('')
 const saving = ref(false)
 
 /* 企业管理员才能管理成员与邀请；后端也有同规则兜底 */
@@ -149,6 +152,7 @@ async function load() {
   }
   integrations.value = ws.data?.integrationStatus || {}
   try { aiConfig.value = await api.request('/api/config/status') } catch {}
+  try { const c: any = await api.llmConfig(); llmOn.value = c?.source === 'organization' && c?.enabled === true; llmModel.value = c?.model || '' } catch {}
   await Promise.all([loadMembers(), loadInvites()])
 }
 async function save() {
@@ -195,7 +199,8 @@ onMounted(load)
       <article class="spanel">
         <h3><i></i>模型分析</h3>
         <div v-if="aiConfig" class="kv-list">
-          <div class="kv"><span>分析模式</span><span class="mono">{{ aiConfig.enterprise_llm_api ? 'Agent · 工具调用' : '规则归纳' }}</span></div>
+          <div class="kv"><span>分析模式</span><span class="mono">{{ llmOn ? 'Agent · 工具调用' : '规则归纳' }}</span></div>
+          <div v-if="llmOn && llmModel" class="kv"><span>当前模型</span><span class="mono ellipsis">{{ llmModel }}</span></div>
           <div class="kv"><span>每日限额</span><span class="mono">个人 {{ aiConfig.daily_analysis_limit }} · 企业 {{ aiConfig.daily_organization_analysis_limit }}</span></div>
         </div>
         <p v-else class="muted">配置状态暂不可用，请刷新重试。</p>
@@ -212,7 +217,7 @@ onMounted(load)
       </article>
     </div>
 
-    <ModelAccessPanel :is-admin="isAdmin" />
+    <ModelAccessPanel :is-admin="isAdmin" @changed="(c: any) => { llmOn = c?.source === 'organization' && c?.enabled === true; llmModel = c?.model || '' }" />
 
     <!-- 集成接入指引 -->
     <section class="wide-panel">

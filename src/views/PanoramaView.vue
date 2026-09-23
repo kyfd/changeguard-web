@@ -101,6 +101,12 @@ const NODE_ROUTE: Record<string, string> = {
   sql: 'risks', k8s: 'apps', cfg: 'policies', api: 'changes', evidence: 'audits', gate: 'approvals', pass: 'changes',
 }
 function onSelect(id: string) { go(NODE_ROUTE[id] || 'apps') }
+/* canvas 读取的是 :root 变量，局部 CSS 覆盖对它无效，这里显式传入深色霓虹色板 */
+const LATTICE_THEME = {
+  brand: '#3ee0ff', brandSoft: 'rgba(62,224,255,0.14)', lineBright: 'rgba(62,224,255,0.6)',
+  line: 'rgba(62,224,255,0.16)', lineStrong: 'rgba(62,224,255,0.3)', cinnabar: '#ff4d6a', amber: '#ffb547',
+  textFaint: '#5f7896', textMute: '#9fc3e0', text: '#e8f6ff', bgVoid: '#06122a',
+}
 
 /* ── 态势 ─────────────────────────────────────────────── */
 const threatText = computed(() => ({ CRITICAL: '危急', ELEVATED: '升高', WATCH: '关注', NOMINAL: '平稳' } as Record<string, string>)[threat.value.level] || '平稳')
@@ -180,7 +186,7 @@ function rel(iso?: string) {
 
     <!-- 中心拓扑 -->
     <div class="core">
-      <ChangeLattice expand interactive :values="latticeValues" :hot="hotNodes" :satellites="satellites" @select="onSelect" />
+      <ChangeLattice expand interactive glow :side-inset="0" :theme="LATTICE_THEME" :values="latticeValues" :hot="hotNodes" :satellites="satellites" @select="onSelect" />
       <div class="core-ring" aria-hidden="true"><i></i><i></i></div>
     </div>
 
@@ -403,13 +409,13 @@ button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .t-cyan { --kc: #3ee0ff; } .t-red { --kc: #ff4d6a; } .t-amber { --kc: #ffb547; } .t-green { --kc: #2de0a7; }
 
 /* ===== 侧栏面板 ===== */
-.col { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+.col { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; min-height: 0; min-width: 0; overflow: hidden; }
 .left { grid-area: left; } .right { grid-area: right; }
-.panel { position: relative; padding: 12px 14px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line-strong); box-shadow: var(--glow); backdrop-filter: blur(6px); min-height: 0; }
+.panel { flex: none; position: relative; padding: 12px 14px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line-strong); box-shadow: var(--glow); backdrop-filter: blur(6px); min-height: 0; }
 .panel::before, .panel::after { content: ''; position: absolute; width: 10px; height: 10px; border-color: var(--brand); border-style: solid; opacity: .9; }
 .panel::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; }
 .panel::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; }
-.panel.grow { flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; }
+.panel.grow { flex: 1 1 0; min-height: 120px; overflow: hidden; display: flex; flex-direction: column; }
 .panel > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .h { font-size: 13px; font-weight: 600; color: var(--text-strong); padding-left: 10px; position: relative; letter-spacing: .04em; }
 .h::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; background: var(--brand); box-shadow: 0 0 8px var(--brand); }
@@ -486,6 +492,17 @@ button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .r-low { background: var(--jade); box-shadow: 0 0 6px var(--jade); }
 .hint { flex: none; font-size: 11px; color: var(--text-faint); }
 
+/* ===== 矮屏压缩 ===== */
+@media (max-height: 960px) and (min-width: 1025px) {
+  .deck { gap: 10px; padding: 10px 16px; }
+  .kpi { padding: 8px 12px; } .kpi b { font-size: 26px; }
+  .panel { padding: 10px 12px; } .panel > header { margin-bottom: 8px; padding-bottom: 6px; }
+  .gauge, .ring { width: 80px; height: 80px; } .gauge b, .ring b { font-size: 20px; }
+  .donut { width: 88px; height: 88px; }
+  .f-row { height: 21px; } .threat li, .ai li, .legend li { font-size: 11.5px; }
+  .threat ul, .ai ul, .legend { gap: 5px; }
+  .model { margin-top: 6px; }
+}
 /* ===== 响应式 ===== */
 @media (max-width: 1360px) {
   .deck { grid-template-columns: minmax(260px, 25vw) 1fr minmax(260px, 25vw); }

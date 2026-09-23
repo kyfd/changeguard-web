@@ -7,7 +7,12 @@ const props = withDefaults(defineProps<{
   values?: Record<string, number | string>
   hot?: string[]
   satellites?: { id: string; label: string; value?: number | string }[]
-}>(), { interactive: false, expand: false, values: () => ({}), hot: () => [], satellites: () => [] })
+  /** 调色板覆盖：大屏等局部深色场景传入，canvas 无法读取组件内的 CSS 变量覆盖 */
+  theme?: Partial<Record<'brand' | 'brandSoft' | 'lineBright' | 'line' | 'lineStrong' | 'cinnabar' | 'amber' | 'textFaint' | 'textMute' | 'text' | 'bgVoid', string>>
+  /** 两侧留白比例（expand 模式），面板不遮挡画布时传 0 */
+  sideInset?: number
+  glow?: boolean
+}>(), { interactive: false, expand: false, values: () => ({}), hot: () => [], satellites: () => [], theme: () => ({}), sideInset: 0.24, glow: false })
 
 const emit = defineEmits<{ select: [id: string] }>()
 
@@ -48,7 +53,7 @@ const RISK_NODES = new Set(['sql', 'verify'])
 const WARN_NODES = new Set(['approve', 'gate'])
 
 /* 3 条参考轨（hairline），节点落在轨上；外圈承载 ring2 + 卫星 */
-const RING_K = [0.36, 0.62, 0.88]
+const RING_K = [0.30, 0.56, 0.80, 0.98]
 
 const lastPlaced = new Map<string, { x: number; y: number; n: NodeDef }>()
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -70,17 +75,17 @@ function nodesNow(): NodeDef[] {
   const extra: NodeDef[] = (props.satellites || []).slice(0, 8).map((s, i) => ({
     id: s.id,
     label: s.label,
-    ring: 2,
-    a0: (i / Math.max(1, Math.min(8, props.satellites.length))) * Math.PI * 2 + 0.2,
+    ring: 3,
+    a0: (i / Math.max(1, Math.min(8, props.satellites.length))) * Math.PI * 2 + 0.55, // 与 ring2 节点错开，经布局模拟验证无标签重叠
     route: 'apps',
   }))
   return extra.length ? [...CORE, ...extra] : [
     ...CORE,
-    { id: 'sat-a', label: '预发', ring: 2, a0: 0.75, route: 'risks' },
-    { id: 'sat-b', label: '灰度', ring: 2, a0: 1.85, route: 'changes' },
-    { id: 'sat-c', label: '生产', ring: 2, a0: 2.95, route: 'approvals' },
-    { id: 'sat-d', label: '回放', ring: 2, a0: 4.05, route: 'audits' },
-    { id: 'sat-e', label: '下游', ring: 2, a0: 5.15, route: 'apps' },
+    { id: 'sat-a', label: '预发', ring: 3, a0: 0.75, route: 'risks' },
+    { id: 'sat-b', label: '灰度', ring: 3, a0: 1.85, route: 'changes' },
+    { id: 'sat-c', label: '生产', ring: 3, a0: 2.95, route: 'approvals' },
+    { id: 'sat-d', label: '回放', ring: 3, a0: 4.05, route: 'audits' },
+    { id: 'sat-e', label: '下游', ring: 3, a0: 5.15, route: 'apps' },
   ]
 }
 
@@ -99,6 +104,12 @@ function resize() {
 function palette() {
   const s = getComputedStyle(document.documentElement)
   const get = (n: string, fb: string) => s.getPropertyValue(n).trim() || fb
+  return {
+    ...PALETTE_BASE(get),
+    ...props.theme,
+  }
+}
+function PALETTE_BASE(get: (n: string, fb: string) => string) {
   return {
     brand: get('--brand', '#4a55cc'),
     brandSoft: get('--brand-soft', 'rgba(74,85,204,0.08)'),
@@ -171,9 +182,9 @@ function draw() {
   const cx = w * 0.5
   const cy = h * (props.expand ? 0.52 : 0.48)
   // 两侧信息面板让出横向空间
-  const inset = props.expand ? Math.min(320, w * 0.24) : 0
+  const inset = props.expand ? Math.min(320, w * props.sideInset) : 0
   const rx = props.expand ? Math.max(240, (w - inset * 2) * 0.46) : Math.min(w, h) * 0.42
-  const ry = props.expand ? h * 0.42 : h * 0.4
+  const ry = props.expand ? h * 0.40 : h * 0.4
   const list = nodesNow()
 
   // 参考轨：3 条 hairline
@@ -230,13 +241,15 @@ function draw() {
     const warn = hot && WARN_NODES.has(n.id)
     const hovered = hoverId === n.id
 
+    if (props.glow) { ctx.shadowBlur = hovered || risk || warn ? 14 : 8; ctx.shadowColor = hovered ? pal.brand : risk ? pal.cinnabar : warn ? pal.amber : pal.brand }
     ctx.beginPath()
     rrect(ctx, p.x - nodeR / 2, p.y - nodeR / 2, nodeR, 2)
     if (hovered) ctx.fillStyle = pal.brand
     else if (risk) ctx.fillStyle = pal.cinnabar
     else if (warn) ctx.fillStyle = pal.amber
-    else ctx.fillStyle = pal.textFaint
+    else ctx.fillStyle = props.glow ? pal.brand : pal.textFaint
     ctx.fill()
+    ctx.shadowBlur = 0
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
