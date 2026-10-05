@@ -1,38 +1,46 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useWorkspaceStore } from '@/stores/workspace'
-import { api } from '@/api/client'
+import { useWorkspaceStore } from '@/stores/workspace.ts'
+import { api } from '@/api/client.ts'
 import TechIcon from '@/components/TechIcon.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import NeonButton from '@/components/NeonButton.vue'
-import { STATUS_LABEL, ownerOf, fmtTime, consumptionStats } from '@/lib/labels'
+import { ownerOf, fmtTime, consumptionStats, STATUS_LABEL } from '@/lib/labels.ts'
 
 const ws = useWorkspaceStore()
 const router = useRouter()
 
-const pending = computed(() => ws.changes.filter(c => c.status === 'WAITING_APPROVAL'))
-const failed = computed(() => ws.changes.filter(c => c.status === 'CHECK_FAILED'))
-const high = computed(() => ws.changes.filter(c => c.risk === 'HIGH' && !['APPROVED', 'COMPLETED', 'REJECTED'].includes(c.status)))
-const recent = computed(() => [...ws.changes].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || '')).slice(0, 8))
+const pending = computed(() => ws.changes.filter((c) => c.status === 'WAITING_APPROVAL'))
+const failed = computed(() => ws.changes.filter((c) => c.status === 'CHECK_FAILED'))
+const high = computed(() =>
+  ws.changes.filter((c) => c.risk === 'HIGH' && !['APPROVED', 'COMPLETED', 'REJECTED'].includes(c.status))
+)
+const recent = computed(() =>
+  [...ws.changes]
+    .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+    .slice(0, 8)
+)
 const consumption = computed(() => consumptionStats(ws.changes))
 
-/* 待办按紧急度合并：待审批优先，其次检查失败，再次高危待处理。
-   KPI 与列表必须同源，否则会出现「待审批 0」却列出若干条的矛盾。 */
+/* 待办按紧急度合并：待审批优先，其次检查失败，再次高危待处理 */
 const inbox = computed(() => {
   const seen = new Set<string>()
   const out: { c: any; kind: string; tone: 'wait' | 'fail' | 'risk' }[] = []
   for (const c of pending.value) {
     if (seen.has(c.id)) continue
-    seen.add(c.id); out.push({ c, kind: '待审批', tone: 'wait' })
+    seen.add(c.id)
+    out.push({ c, kind: '待审批', tone: 'wait' })
   }
   for (const c of failed.value) {
     if (seen.has(c.id)) continue
-    seen.add(c.id); out.push({ c, kind: '检查失败', tone: 'fail' })
+    seen.add(c.id)
+    out.push({ c, kind: '检查失败', tone: 'fail' })
   }
   for (const c of high.value) {
     if (seen.has(c.id)) continue
-    seen.add(c.id); out.push({ c, kind: '高危待处理', tone: 'risk' })
+    seen.add(c.id)
+    out.push({ c, kind: '高危待处理', tone: 'risk' })
   }
   return out
 })
@@ -46,78 +54,91 @@ const headline = computed(() => {
   return bits.length ? bits.join(' · ') : '当前已加载变更没有上述待办'
 })
 
-function open(id: string) { router.push({ name: 'change-detail', params: { id } }) }
+function open(id: string) {
+  router.push({ name: 'change-detail', params: { id } })
+}
+
 function openDeck() {
   router.push({ name: 'panorama' })
 }
 
-/* 变更趋势：近 6 个自然月（UTC+8 口径，与审计月报一致）。-1 为"无样本"，显示为— */
+/* 变更趋势：近 6 个自然月（UTC+8 口径） */
 const trends = ref<any[]>([])
 const trendsLoaded = ref(false)
+
 onMounted(async () => {
   try {
     const data = await api.trends(6)
     trends.value = Array.isArray(data) ? data : []
-  } catch { /* 趋势是增强信息，加载失败不打扰工作台 */ }
+  } catch {
+    /* 趋势是增强信息，加载失败不打扰工作台 */
+  }
   trendsLoaded.value = true
 })
+
 const hasTrends = computed(() => trendsLoaded.value && trends.value.some((t: any) => (t.submitted || 0) > 0))
 
-/* 折线图数据。
- *
- * 阈值是**至少 3 个有效点**，不是 2 个：
- *   - 1 个点：一根贴边的短划线，看起来像图表坏了；
- *   - 2 个点：一条直线，只能说明"涨了/跌了一次"，那不是趋势；
- *   - 6 个月窗口里只有 2 个月有数据时，这条线横跨 4 个空月份，
- *     视觉上暗示了一段并不存在的变化过程。
- * 少于 3 个点返回 null，由界面显示"样本不足，无法绘制趋势"。
- *
- * y 轴按有效点的取值范围缩放（不归一到 0）：这些是比率/时长，关注相对变化；
- * 同时留出上下边距，避免折线贴死边框。
- */
+/* 折线图数据：阈值为至少 3 个有效点，少于 3 个点由界面展示说明 */
 function seriesPoints(getter: (t: any) => number | null, width: number, height: number) {
-  const values = trends.value.map(t => getter(t))
+  const values = trends.value.map((t) => getter(t))
   const pts = values
     .map((v, i) => (v == null ? null : { x: i, y: v, v }))
     .filter(Boolean) as { x: number; y: number; v: number }[]
   if (pts.length < 3) return null
 
-  const lo = Math.min(...pts.map(p => p.v))
-  const hi = Math.max(...pts.map(p => p.v))
-  // 所有点同值时不存在"趋势"：画一条水平线即可，但要避开除零。
+  const lo = Math.min(...pts.map((p) => p.v))
+  const hi = Math.max(...pts.map((p) => p.v))
   const span = hi - lo
   const pad = 4
   const usable = height - pad * 2
   const step = width / (trends.value.length - 1)
-  const placed = pts.map(p => ({
+  const placed = pts.map((p) => ({
     x: p.x * step,
     y: span === 0 ? height / 2 : pad + ((hi - p.v) / span) * usable,
     v: p.v,
   }))
   return {
-    line: placed.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    line: placed.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
     dots: placed,
   }
 }
+
 const submittedBars = computed(() => {
   const max = Math.max(...trends.value.map((t: any) => t.submitted || 0), 1)
   return trends.value.map((t: any) => ({
     label: String(t.month || '').slice(5),
-    done: t.completed || 0, rejected: t.rejected || 0, flying: t.in_flight || 0,
+    done: t.completed || 0,
+    rejected: t.rejected || 0,
+    flying: t.in_flight || 0,
     total: t.submitted || 0,
-    doneH: (t.completed || 0) / max * 100,
-    rejectedH: (t.rejected || 0) / max * 100,
-    flyingH: (t.in_flight || 0) / max * 100,
+    doneH: ((t.completed || 0) / max) * 100,
+    rejectedH: ((t.rejected || 0) / max) * 100,
+    flyingH: ((t.in_flight || 0) / max) * 100,
   }))
 })
-const rejectionSeries = computed(() => seriesPoints(t => (t.rejection_rate == null || t.rejection_rate < 0 ? null : t.rejection_rate as number * 100), 100, 40))
-const highRiskSeries = computed(() => seriesPoints(t => (t.high_risk_rate == null || t.high_risk_rate < 0 ? null : t.high_risk_rate as number * 100), 100, 40))
-const approvalSeries = computed(() => seriesPoints(t => (t.approval_hours == null || t.approval_hours < 0 ? null : t.approval_hours as number), 100, 40))
-/** 取「最近一个有样本的月份」的指标值，同时说明它取自哪个自然月。
- *
- * 只返回值不够：这三个数字是从右往左找第一个有样本的月份，不一定是最新月份。
- * 界面若不说明取自哪个月，读者会把它当成最新月（甚至全量）的值来判断——
- * 近期无定局样本时，显示的其实是上一个月的数字。 */
+
+const rejectionSeries = computed(() =>
+  seriesPoints(
+    (t) => (t.rejection_rate == null || t.rejection_rate < 0 ? null : (t.rejection_rate as number) * 100),
+    100,
+    40
+  )
+)
+const highRiskSeries = computed(() =>
+  seriesPoints(
+    (t) => (t.high_risk_rate == null || t.high_risk_rate < 0 ? null : (t.high_risk_rate as number) * 100),
+    100,
+    40
+  )
+)
+const approvalSeries = computed(() =>
+  seriesPoints(
+    (t) => (t.approval_hours == null || t.approval_hours < 0 ? null : (t.approval_hours as number)),
+    100,
+    40
+  )
+)
+
 function lastValueWithMonth(getter: (t: any) => number | null, unit = '') {
   for (let i = trends.value.length - 1; i >= 0; i--) {
     const month = trends.value[i]
@@ -129,13 +150,14 @@ function lastValueWithMonth(getter: (t: any) => number | null, unit = '') {
   }
   return { text: '—', month: '', isLatest: false }
 }
-const rejectionValue = computed(() => lastValueWithMonth(t => (t.rejection_rate < 0 ? null : t.rejection_rate), '%'))
-const highRiskValue = computed(() => lastValueWithMonth(t => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%'))
-const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours < 0 ? null : t.approval_hours)))
+const rejectionValue = computed(() => lastValueWithMonth((t) => (t.rejection_rate < 0 ? null : t.rejection_rate), '%'))
+const highRiskValue = computed(() => lastValueWithMonth((t) => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%'))
+const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours < 0 ? null : t.approval_hours)))
 </script>
 
 <template>
   <div class="page">
+    <!-- 头部区域 -->
     <div class="page-head">
       <div>
         <div class="page-kicker mono">NOW</div>
@@ -143,35 +165,55 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
         <div class="page-sub">{{ headline }}</div>
       </div>
       <div class="page-actions">
-        <NeonButton variant="ghost" size="sm" @click="openDeck"><TechIcon name="activity" :size="15" /> 总览</NeonButton>
-        <NeonButton size="sm" @click="ws.load(true).catch(() => {})"><TechIcon name="refresh" :size="15" /> 刷新</NeonButton>
+        <NeonButton variant="ghost" size="sm" @click="openDeck">
+          <TechIcon name="activity" :size="15" /> 全景总览
+        </NeonButton>
+        <NeonButton size="sm" @click="ws.load(true).catch(() => {})">
+          <TechIcon name="refresh" :size="15" /> 刷新
+        </NeonButton>
       </div>
     </div>
 
+    <!-- 顶部 4 格 KPI 核心卡片 -->
     <div class="now-grid">
-      <button class="now-card" :class="{ mute: !pending.length }" @click="router.push({ name: 'approvals' })">
+      <button
+        class="now-card"
+        :class="{ mute: !pending.length }"
+        @click="router.push({ name: 'approvals' })"
+      >
         <span>待审批</span>
         <strong>{{ pending.length }}</strong>
         <small>需要独立判断的变更</small>
       </button>
-      <button class="now-card warn" :class="{ mute: !failed.length }" @click="router.push({ name: 'changes' })">
+
+      <button
+        class="now-card warn"
+        :class="{ mute: !failed.length }"
+        @click="router.push({ name: 'changes' })"
+      >
         <span>检查未通过</span>
         <strong>{{ failed.length }}</strong>
         <small>门禁拦下，需整改后重提</small>
       </button>
-      <button class="now-card warn" :class="{ mute: !high.length }" @click="router.push({ name: 'risks' })">
+
+      <button
+        class="now-card warn"
+        :class="{ mute: !high.length }"
+        @click="router.push({ name: 'risks' })"
+      >
         <span>高危待处理</span>
         <strong>{{ high.length }}</strong>
         <small>请核对规则结果与验证证据</small>
       </button>
+
       <button class="now-card" @click="router.push({ name: 'changes' })">
         <span>消费占比</span>
         <strong>{{ consumption.percent }}<em>%</em></strong>
-        <small>通行证已消费 {{ consumption.consumed }} / 当前已加载 {{ consumption.total }}</small>
+        <small>通行证已消费 {{ consumption.consumed }} / 已加载 {{ consumption.total }}</small>
       </button>
     </div>
 
-    <!-- 治理趋势：仅在有历史数据时出现，空工作台不打扰 -->
+    <!-- 治理趋势：仅在有历史数据时出现 -->
     <section v-if="hasTrends" class="trends">
       <header>
         <h3>变更趋势<span class="hint mono">近 {{ trends.length }} 个月 · UTC+8 月口径</span></h3>
@@ -183,7 +225,12 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
         <div class="trend">
           <div class="kicker">月提交量</div>
           <div class="bars">
-            <div v-for="b in submittedBars" :key="b.label" class="bar-col" :title="`${b.label} 月：提交 ${b.total}（消费 ${b.done} / 拒绝 ${b.rejected} / 推进中 ${b.flying}）`">
+            <div
+              v-for="b in submittedBars"
+              :key="b.label"
+              class="bar-col"
+              :title="`${b.label} 月：提交 ${b.total}（消费 ${b.done} / 拒绝 ${b.rejected} / 推进中 ${b.flying}）`"
+            >
               <div class="bar-stack">
                 <i class="seg flying" :style="{ height: b.flyingH + '%' }"></i>
                 <i class="seg rejected" :style="{ height: b.rejectedH + '%' }"></i>
@@ -193,32 +240,35 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
             </div>
           </div>
         </div>
+
         <div class="trend">
           <div class="kicker">拒绝率（定局口径）</div>
           <strong class="now mono">{{ rejectionValue.text }}</strong>
           <div class="trend-src mono">{{ rejectionValue.month ? (rejectionValue.isLatest ? rejectionValue.month + ' 当月' : rejectionValue.month + ' · 最新月无定局样本') : '近 6 个月无样本' }}</div>
           <svg v-if="rejectionSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <polyline :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
             <circle v-for="(p, i) in rejectionSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--cinnabar)" />
           </svg>
           <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
+
         <div class="trend">
           <div class="kicker">高危占比</div>
           <strong class="now mono">{{ highRiskValue.text }}</strong>
           <div class="trend-src mono">{{ highRiskValue.month ? (highRiskValue.isLatest ? highRiskValue.month + ' 当月' : highRiskValue.month + ' · 最新月无提交') : '近 6 个月无提交' }}</div>
           <svg v-if="highRiskSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <polyline :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
             <circle v-for="(p, i) in highRiskSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--amber)" />
           </svg>
           <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
+
         <div class="trend">
           <div class="kicker">平均决策时长（小时）</div>
           <strong class="now mono">{{ approvalValue.text }}</strong>
           <div class="trend-src mono">{{ approvalValue.month ? (approvalValue.isLatest ? approvalValue.month + ' 当月' : approvalValue.month + ' · 最新月无审批定论') : '近 6 个月无审批定论' }}</div>
           <svg v-if="approvalSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+            <polyline :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
             <circle v-for="(p, i) in approvalSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--brand)" />
           </svg>
           <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
@@ -226,13 +276,19 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
       </div>
     </section>
 
+    <!-- 底部双列队列：待处理事项 vs 最近轨迹 -->
     <div class="split">
       <section class="queue">
         <header>
           <h3>待处理事项<span class="count mono">{{ inbox.length }}</span></h3>
           <button class="text-link" @click="router.push({ name: 'approvals' })">全部审批</button>
         </header>
-        <button v-for="it in inbox" :key="it.c.id" class="queue-row" @click="open(it.c.id)">
+        <button
+          v-for="it in inbox"
+          :key="it.c.id"
+          class="queue-row"
+          @click="open(it.c.id)"
+        >
           <span class="tag" :class="it.tone">{{ it.kind }}</span>
           <div class="row-main">
             <strong class="ellipsis">{{ it.c.title || it.c.summary || '未命名变更' }}</strong>
@@ -248,8 +304,15 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
           <h3>最近轨迹</h3>
           <button class="text-link" @click="router.push({ name: 'changes' })">全部变更</button>
         </header>
-        <button v-for="c in recent" :key="c.id" class="queue-row compact" @click="open(c.id)">
-          <StatusBadge type="status" :value="c.status" size="sm">{{ STATUS_LABEL[c.status] || c.status }}</StatusBadge>
+        <button
+          v-for="c in recent"
+          :key="c.id"
+          class="queue-row compact"
+          @click="open(c.id)"
+        >
+          <StatusBadge type="status" :value="c.status" size="sm">
+            {{ STATUS_LABEL[c.status] || c.status }}
+          </StatusBadge>
           <div class="row-main">
             <strong class="ellipsis">{{ c.title || c.summary || '未命名变更' }}</strong>
             <small class="mono">{{ String(c.id).slice(0, 8) }} · {{ fmtTime(c.updated_at) }}</small>
@@ -263,137 +326,370 @@ const approvalValue = computed(() => lastValueWithMonth(t => (t.approval_hours <
 
 <style scoped>
 @import './page.css';
-.now-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); flex: none; }
-/* 参考台的指标卡：kicker 标签 + 24px 实数值 + 小注 */
-.now-card {
-  text-align: left; padding: var(--sp-4); border-radius: var(--r-lg);
-  background: var(--surface); border: 1px solid var(--line); color: inherit;
-  box-shadow: var(--shadow-card);
-  transition: background var(--dur-fast);
+
+.now-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  flex: none;
 }
-:root[data-theme="light"] .now-card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
+
+@media (max-width: 860px) {
+  .now-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.now-card {
+  text-align: left;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: inherit;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+  cursor: pointer;
+}
+
+.now-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand);
+  box-shadow: var(--shadow-panel);
+}
+
 .now-card span {
   display: block;
-  font-family: var(--font-mono); font-size: var(--fs-11);
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-faint); margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
 }
+
 .now-card strong {
   display: block;
-  font-size: var(--fs-24); color: var(--brand);
-  font-weight: var(--fw-semibold); font-family: var(--font-sans); line-height: var(--lh-tight);
+  font-size: var(--fs-24);
+  color: var(--brand);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-sans);
+  line-height: var(--lh-tight);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
-.now-card strong em { font-style: normal; font-size: var(--fs-13); margin-left: 2px; color: var(--text-mute); }
-.now-card small { display: block; margin-top: 6px; color: var(--text-faint); font-size: var(--fs-12); line-height: var(--lh-snug); }
-.now-card.warn strong { color: var(--cinnabar); }
-/* 零值不该抢占视觉重心：没有待办时降为静默态 */
-.now-card.mute strong { color: var(--text-faint); }
-.now-card:hover { background: var(--bg-elev); }
 
-/* 治理趋势面板：与队列面板同一卡片语言，图表全部内联 SVG/DIV，无图表库 */
+.now-card strong em {
+  font-style: normal;
+  font-size: var(--fs-13);
+  margin-left: 2px;
+  color: var(--text-mute);
+}
+
+.now-card small {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  line-height: var(--lh-snug);
+}
+
+.now-card.warn strong {
+  color: var(--cinnabar);
+}
+
+.now-card.mute strong {
+  color: var(--text-faint);
+}
+
+/* 治理趋势面板 */
 .trends {
-  margin-bottom: var(--sp-3);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
-  box-shadow: var(--shadow-card); padding: 14px var(--sp-4) var(--sp-4);
-}
-:root[data-theme="light"] .trends { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
-.trends header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
-.trends h3 { font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: var(--sp-2); }
-.trends .hint { font-size: var(--fs-11); color: var(--text-faint); font-weight: var(--fw-regular); letter-spacing: 0.04em; }
-.trends .legend { font-size: var(--fs-11); color: var(--text-faint); display: inline-flex; align-items: center; gap: 6px; }
-.trends .legend .dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin: 0 3px 0 8px; }
-.trends .legend .dot:first-child { margin-left: 0; }
-.dot.brand { background: var(--brand); }
-.dot.red { background: var(--cinnabar); }
-.dot.gray { background: var(--line-strong); }
-.trend-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: var(--sp-4); }
-.trend { min-width: 0; }
-.trend .kicker { margin-bottom: 8px; }
-.trend .now { display: block; font-size: var(--fs-20); color: var(--text-strong); font-weight: var(--fw-semibold); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-/* 指标数字的来源月份：必须和数字一样醒目，否则读者会把它当成最新月的值。 */
-.trend .trend-src { display: block; font-size: var(--fs-11); color: var(--text-faint); margin-bottom: 6px; }
-.spark { display: block; width: 100%; height: 44px; overflow: visible; }
-/* 有效点少于两个时不画折线，改显示一句说明。
-   一根孤零零的短划线会被读成"图表坏了"，而不是"样本不足"。 */
-.spark-empty { display: flex; align-items: center; height: 44px; font-size: var(--fs-11); color: var(--text-faint); }
-.bars { display: flex; align-items: flex-end; gap: 6px; height: 74px; }
-.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
-.bar-stack { flex: 1; width: 100%; max-width: 26px; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 2px; overflow: hidden; background: var(--surface-2); }
-.bar-stack .seg { display: block; width: 100%; }
-.seg.done { background: var(--brand); }
-.seg.rejected { background: var(--cinnabar); }
-.seg.flying { background: var(--line-strong); }
-.bar-col small { font-size: var(--fs-10, 10px); color: var(--text-faint); }
-@media (max-width: 1180px) { .trend-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 640px) { .trend-grid { grid-template-columns: 1fr; } }
-
-/* 左栏是行动队列（长），右栏是参考轨迹（短），等宽会一边空一边裁 */
-.split { display: grid; grid-template-columns: 3fr 2fr; gap: var(--sp-3); min-height: 0; }
-.queue {
-  display: flex; flex-direction: column;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
   box-shadow: var(--shadow-card);
-  min-height: 0; overflow: auto;
 }
-:root[data-theme="light"] .queue { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-card); }
-.queue header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px var(--sp-4); flex: none;
-  border-bottom: 1px solid var(--line);
-  position: sticky; top: 0; background: var(--surface); z-index: 1;
-}
-.queue h3 { font-size: var(--fs-14); color: var(--text-strong); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: var(--sp-2); }
-.queue h3 .count {
-  font-size: var(--fs-11); color: var(--text-faint); background: var(--surface-2);
-  border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 5px;
-  font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-weight: var(--fw-regular);
-}
-.text-link { font-size: var(--fs-12); color: var(--text-faint); }
-.text-link:hover { color: var(--brand-bright); }
-.queue-row {
-  width: 100%; display: flex; align-items: center; gap: var(--sp-3);
-  min-height: 48px; padding: 10px var(--sp-4);
-  border-bottom: 1px solid var(--line); text-align: left; color: inherit;
-  flex: none; transition: background var(--dur-fast);
-}
-.queue-row:hover { background: var(--bg-elev); }
-.queue-row.compact { min-height: 40px; }
-.queue-row .row-main { min-width: 0; flex: 1; }
-.queue-row strong { display: block; font-size: var(--fs-13); color: var(--text-strong); font-weight: var(--fw-medium); }
-.queue-row small { display: block; margin-top: 2px; font-size: var(--fs-11); color: var(--text-faint); }
-.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 空态在面板体内垂直居中，不贴着表头；有数据时该规则不命中 */
-.queue .empty-full {
-  flex: 1 1 auto;
+.trends header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 220px;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
 }
 
-/* 事项类别用方形标签，与状态徽章区分开 */
+.trends h3 {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: var(--fw-semibold);
+  color: var(--text-strong);
+}
+
+.hint {
+  font-size: var(--fs-11);
+  color: var(--text-faint);
+  margin-left: var(--sp-2);
+  font-weight: normal;
+}
+
+.legend {
+  font-size: var(--fs-11);
+  color: var(--text-mute);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.legend .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.legend .dot.brand {
+  background: var(--brand);
+}
+.legend .dot.red {
+  background: var(--cinnabar);
+}
+.legend .dot.gray {
+  background: var(--line-strong);
+}
+
+.trend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+}
+
+@media (max-width: 860px) {
+  .trend-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.trend {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: var(--sp-3);
+}
+
+.trend .kicker {
+  font-size: var(--fs-11);
+  color: var(--text-mute);
+  margin-bottom: 6px;
+}
+
+.trend .now {
+  display: block;
+  font-size: var(--fs-20);
+  font-weight: var(--fw-semibold);
+  color: var(--text-strong);
+  margin-bottom: 8px;
+}
+.trend .trend-src {
+  display: block;
+  font-size: var(--fs-11);
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.spark-empty {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  font-size: var(--fs-11);
+  color: var(--text-faint);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  height: 60px;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.bar-stack {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.seg {
+  width: 100%;
+  transition: height var(--dur);
+}
+.seg.done {
+  background: var(--brand);
+}
+.seg.rejected {
+  background: var(--cinnabar);
+}
+.seg.flying {
+  background: var(--text-faint);
+}
+
+.bar-col small {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.spark {
+  width: 100%;
+  height: 38px;
+  overflow: visible;
+}
+
+/* 队列分栏 */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+@media (max-width: 860px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.queue {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4) var(--sp-5);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+}
+
+.queue header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.queue h3 {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: var(--fw-semibold);
+  color: var(--text-strong);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.count {
+  font-size: var(--fs-12);
+  background: var(--brand-soft);
+  color: var(--brand);
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+}
+
+.text-link {
+  background: transparent;
+  border: none;
+  font-size: var(--fs-12);
+  color: var(--brand);
+  cursor: pointer;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.queue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
+  border-radius: var(--r);
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+  border-bottom: 1px solid var(--line);
+}
+
+.queue-row:last-child {
+  border-bottom: none;
+}
+
+.queue-row:hover {
+  background: var(--bg-elev);
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-main strong {
+  display: block;
+  font-size: var(--fs-13);
+  color: var(--text-strong);
+}
+
+.row-main small {
+  font-size: var(--fs-11);
+  color: var(--text-faint);
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tag {
-  flex: none; font-size: var(--fs-11); letter-spacing: 0.02em; padding: 2px 6px;
-  border-radius: var(--r-sm); border: 1px solid var(--line); color: var(--text-mute);
-  font-family: var(--font-mono); white-space: nowrap;
+  font-size: var(--fs-11);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+  white-space: nowrap;
 }
-.tag.wait { color: var(--brand); border-color: color-mix(in srgb, var(--brand) 45%, transparent); }
-.tag.fail { color: var(--cinnabar); border-color: color-mix(in srgb, var(--cinnabar) 45%, transparent); }
-.tag.risk { color: var(--cinnabar); border-color: color-mix(in srgb, var(--cinnabar) 30%, transparent); }
+.tag.wait {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.tag.fail {
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+}
+.tag.risk {
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+}
 
-@media (max-width: 1180px) {
-  .now-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 980px) {
-  .now-grid, .split { grid-template-columns: 1fr; }
-  .page { overflow-y: auto; }
-  .page > .split { flex: none; min-height: auto; overflow: visible; }
-  .queue { min-height: 240px; overflow: visible; }
-  .trends { flex: none; }
-  .trends header, .trends h3 { flex-wrap: wrap; }
-  .trends .legend { flex-wrap: wrap; line-height: 1.7; }
+.empty-full {
+  padding: var(--sp-8) 0;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--fs-13);
 }
 </style>
