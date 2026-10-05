@@ -331,7 +331,7 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-4);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-5);
   flex: none;
 }
 
@@ -342,54 +342,75 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
 }
 
 .now-card {
+  position: relative;
   text-align: left;
-  padding: var(--sp-4) var(--sp-5);
+  padding: var(--sp-5);
   border-radius: var(--r-xl);
   background: var(--surface);
   border: 1px solid var(--line);
   color: inherit;
   box-shadow: var(--shadow-card);
-  transition: transform var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+  transition: all var(--dur) var(--ease);
   cursor: pointer;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+/* 顶部极细微晶光槽 */
+.now-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  opacity: 0;
+  transition: opacity var(--dur);
 }
 
 .now-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--brand);
-  box-shadow: var(--shadow-panel);
+  transform: translateY(-3px);
+  border-color: var(--line-bright);
+  box-shadow: var(--shadow-panel), 0 8px 24px -6px rgba(79, 70, 229, 0.18);
+}
+.now-card:hover::before {
+  opacity: 1;
 }
 
 .now-card span {
   display: block;
   font-family: var(--font-mono);
   font-size: var(--fs-11);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-mute);
   margin-bottom: 8px;
+  font-weight: var(--fw-medium);
 }
 
 .now-card strong {
   display: block;
-  font-size: var(--fs-24);
+  font-size: 32px;
   color: var(--brand);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   font-family: var(--font-sans);
   line-height: var(--lh-tight);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
 }
 
 .now-card strong em {
   font-style: normal;
-  font-size: var(--fs-13);
+  font-size: var(--fs-14);
   margin-left: 2px;
   color: var(--text-mute);
+  font-weight: var(--fw-regular);
 }
 
 .now-card small {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--text-faint);
   font-size: var(--fs-12);
   line-height: var(--lh-snug);
@@ -398,50 +419,56 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
 .now-card.warn strong {
   color: var(--cinnabar);
 }
+.now-card.warn::before {
+  background: linear-gradient(90deg, transparent, var(--cinnabar), transparent);
+}
 
 .now-card.mute strong {
   color: var(--text-faint);
+  opacity: 0.6;
 }
-
 /* 治理趋势面板 */
 .trends {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-xl);
-  padding: var(--sp-4) var(--sp-5);
-  margin-bottom: var(--sp-4);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
   box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
 }
 
 .trends header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
 }
 
 .trends h3 {
   margin: 0;
-  font-size: var(--fs-14);
+  font-size: var(--fs-16);
   font-weight: var(--fw-semibold);
   color: var(--text-strong);
+  letter-spacing: -0.02em;
 }
 
 .hint {
   font-size: var(--fs-11);
   color: var(--text-faint);
   margin-left: var(--sp-2);
-  font-weight: normal;
+  font-weight: var(--fw-regular);
 }
 
 .legend {
-  font-size: var(--fs-11);
+  font-size: var(--fs-12);
   color: var(--text-mute);
   display: flex;
   align-items: center;
   gap: var(--sp-3);
 }
-
 .legend .dot {
   display: inline-block;
   width: 8px;
@@ -475,38 +502,47 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
 .trend {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
+  transition: all var(--dur-fast);
+}
+.trend:hover {
+  border-color: var(--line-strong);
 }
 
 .trend .kicker {
   font-size: var(--fs-11);
   color: var(--text-mute);
   margin-bottom: 6px;
+  letter-spacing: 0.05em;
 }
 
 .trend .now {
   display: block;
-  font-size: var(--fs-20);
-  font-weight: var(--fw-semibold);
+  font-size: 26px;
+  font-weight: var(--fw-bold);
   color: var(--text-strong);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
 }
+
 .trend .trend-src {
-  display: block;
   font-size: var(--fs-11);
-  color: var(--text-faint);
-  margin-bottom: 6px;
+  color: var(--brand);
+  background: var(--brand-soft);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  display: inline-block;
+  margin-bottom: 8px;
 }
 
 .spark-empty {
   display: flex;
   align-items: center;
-  height: 38px;
-  font-size: var(--fs-11);
+  height: 44px;
+  font-size: var(--fs-12);
   color: var(--text-faint);
 }
-
 .bars {
   display: flex;
   align-items: flex-end;
@@ -577,12 +613,11 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-xl);
-  padding: var(--sp-4) var(--sp-5);
+  padding: var(--sp-5);
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
 }
-
 .queue header {
   display: flex;
   align-items: center;
@@ -626,14 +661,14 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-2);
+  padding: 12px 10px;
   border-radius: var(--r);
   border: none;
   background: transparent;
   width: 100%;
   text-align: left;
   cursor: pointer;
-  transition: background var(--dur-fast);
+  transition: all var(--dur-fast);
   border-bottom: 1px solid var(--line);
 }
 
@@ -643,8 +678,8 @@ const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours
 
 .queue-row:hover {
   background: var(--bg-elev);
+  transform: translateX(2px);
 }
-
 .row-main {
   flex: 1;
   min-width: 0;

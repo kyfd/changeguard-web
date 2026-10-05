@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { STATUS_LABEL } from '@/lib/labels'
-/* 状态/风险指示器：点 + 文字，无辉光 */
-const props = withDefaults(defineProps<{
-  type?: 'risk' | 'status' | 'plain'
-  value?: string
-  size?: 'sm' | 'md'
-}>(), { type: 'plain', value: '', size: 'md' })
+import { STATUS_LABEL } from '@/lib/labels.ts'
+
+const props = withDefaults(
+  defineProps<{
+    type?: 'risk' | 'status' | 'plain'
+    value?: string
+    size?: 'sm' | 'md'
+  }>(),
+  { type: 'plain', value: '', size: 'md' }
+)
 
 function tone(v: string): { c: string; label: string } {
   const s = String(v || '').toUpperCase()
@@ -16,11 +19,22 @@ function tone(v: string): { c: string; label: string } {
     return { c: 'unknown', label: '待定' }
   }
   if (s === 'OK' || s === 'COMPLETED' || s === 'APPROVED' || s === 'ACTIVE' || s === 'PASSED' || s === 'REAL') {
-    const zh: Record<string, string> = { OK: '正常', COMPLETED: STATUS_LABEL.COMPLETED, APPROVED: '已批准', ACTIVE: '运行中', PASSED: '通过', REAL: '真实' }
+    const zh: Record<string, string> = {
+      OK: '正常',
+      COMPLETED: STATUS_LABEL.COMPLETED,
+      APPROVED: '已批准',
+      ACTIVE: '运行中',
+      PASSED: '通过',
+      REAL: '真实',
+    }
     return { c: 'ok', label: zh[s] || '正常' }
   }
-  if (s === 'FAILED' || s === 'REJECTED' || s === 'ERROR' || s === 'CRITICAL') return { c: 'err', label: STATUS_LABEL[s] || v || '异常' }
-  if (s === 'WAITING_APPROVAL' || s === 'PENDING' || s === 'QUEUED' || s === 'CHECKING') return { c: 'warn', label: STATUS_LABEL[s] || v || '处理中' }
+  if (s === 'FAILED' || s === 'REJECTED' || s === 'ERROR' || s === 'CRITICAL') {
+    return { c: 'err', label: STATUS_LABEL[s] || v || '异常' }
+  }
+  if (s === 'WAITING_APPROVAL' || s === 'PENDING' || s === 'QUEUED' || s === 'CHECKING') {
+    return { c: 'warn', label: STATUS_LABEL[s] || v || '处理中' }
+  }
   return { c: 'info', label: STATUS_LABEL[s] || v || '未知' }
 }
 </script>
@@ -28,33 +42,85 @@ function tone(v: string): { c: string; label: string } {
 <template>
   <span class="badge" :class="[`badge-${tone(value).c}`, `badge-${size}`]">
     <i class="badge-dot" aria-hidden="true"></i>
-    <slot>{{ tone(value).label }}</slot>
+    <span class="badge-text"><slot>{{ tone(value).label }}</slot></span>
   </span>
 </template>
 
 <style scoped>
 .badge {
-  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px;
-  border-radius: var(--r-sm); border: 1px solid var(--line);
-  white-space: nowrap; line-height: 1.3; letter-spacing: 0; font-weight: var(--fw-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1;
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.01em;
+  transition: all var(--dur-fast);
 }
-/* 固定高度：徽章在表格单元格里必须与同行文本基线稳定对齐 */
-.badge-sm { height: 20px; font-size: var(--fs-11); }
-.badge-md { height: 24px; font-size: var(--fs-12); }
-.badge-dot { width: 6px; height: 6px; border-radius: var(--r-xs); flex: none; }
 
-.badge-ok { color: var(--jade); background: var(--jade-soft); }
-.badge-ok .badge-dot { background: var(--jade); }
-.badge-warn { color: var(--amber); background: var(--amber-soft); }
-.badge-warn .badge-dot { background: var(--amber); }
-.badge-err { color: var(--cinnabar); background: var(--cinnabar-soft); }
-.badge-err .badge-dot { background: var(--cinnabar); }
-.badge-high { color: var(--cinnabar); background: var(--cinnabar-soft); }
-.badge-high .badge-dot { background: var(--cinnabar); }
-.badge-medium { color: var(--amber); background: var(--amber-soft); }
-.badge-medium .badge-dot { background: var(--amber); }
-.badge-low { color: var(--brand-bright); background: var(--brand-soft); }
-.badge-low .badge-dot { background: var(--brand); }
-.badge-unknown, .badge-info { color: var(--text-mute); background: var(--surface-2); }
-.badge-unknown .badge-dot, .badge-info .badge-dot { background: var(--text-faint); }
+.badge-sm {
+  height: 22px;
+  font-size: var(--fs-11);
+  padding: 0 7px;
+}
+
+.badge-md {
+  height: 26px;
+  font-size: var(--fs-12);
+  padding: 0 10px;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.badge-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 正常状态（绿色系） */
+.badge-ok {
+  color: var(--jade);
+  background: var(--jade-soft);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* 警告/处理中状态（琥珀色系） */
+.badge-warn, .badge-medium {
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+/* 危险/失败状态（朱砂红色系） */
+.badge-err, .badge-high {
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+/* 低风险/品牌色 */
+.badge-low {
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-color: rgba(79, 70, 229, 0.25);
+}
+
+/* 未知与默认状态 */
+.badge-unknown, .badge-info {
+  color: var(--text-mute);
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+.badge-unknown .badge-dot, .badge-info .badge-dot {
+  box-shadow: none;
+  background: var(--text-faint);
+}
 </style>

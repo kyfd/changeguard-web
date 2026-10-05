@@ -336,19 +336,19 @@ onBeforeUnmount(() => {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 18px;
+  gap: 12px;
+  padding: 8px 10px 20px;
 }
 .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: grid;
   place-items: center;
   border-radius: var(--r-lg);
-  background: var(--brand-soft);
-  color: var(--brand);
-  border: 1px solid var(--line-bright);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-bright) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.4);
 }
 .brand-text {
   display: flex;
@@ -401,12 +401,13 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 12px;
+  padding: 10px 12px;
   border-radius: var(--r);
   color: var(--text-mute);
   font-size: var(--fs-13);
-  transition: background var(--dur-fast), color var(--dur-fast);
+  font-weight: var(--fw-medium);
+  transition: all var(--dur-fast) var(--ease);
   width: 100%;
   text-align: left;
   cursor: pointer;
@@ -414,22 +415,23 @@ onBeforeUnmount(() => {
 }
 .nav-item:hover {
   background: var(--bg-elev);
-  color: var(--text);
+  color: var(--text-strong);
+  transform: translateX(2px);
 }
 .nav-item.router-link-active {
   background: var(--brand-soft);
   color: var(--brand);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
 }
 .nav-item.router-link-active::before {
   content: '';
   position: absolute;
-  left: calc(-1 * var(--sp-2));
+  left: 0;
   top: 8px;
   bottom: 8px;
-  width: 2px;
+  width: 3px;
   background: var(--brand);
-  border-radius: 1px;
+  border-radius: 0 4px 4px 0;
 }
 .nav-ico {
   display: grid;
@@ -505,16 +507,6 @@ onBeforeUnmount(() => {
   background: var(--bg-elev);
 }
 .collapsed .collapse svg {
-  transform: rotate(180deg);
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
 .topbar {
   height: var(--topbar);
   flex: none;
@@ -524,7 +516,11 @@ onBeforeUnmount(() => {
   gap: var(--sp-4);
   padding: 0 var(--sp-6);
   border-bottom: 1px solid var(--line);
-  background: var(--bg-base);
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
   backdrop-filter: blur(8px);
 }
 .topbar-left {

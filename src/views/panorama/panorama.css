@@ -3,19 +3,24 @@ h2 {
   color: var(--p-text);
 }
 .panorama-room {
-  --p-bg: #070f1b;
-  --p-panel: #0c1929;
-  --p-line: #22374c;
-  --p-muted: #9bb0c4;
-  --p-text: #e1edf6;
-  --p-cyan: #6be4e8;
-  --p-amber: #f1c178;
-  --p-red: #ff8f92;
+  --p-bg: #060a12;
+  --p-panel: #0d1524;
+  --p-line: rgba(56, 189, 248, 0.16);
+  --p-muted: #8da2bb;
+  --p-text: #f0f6fc;
+  --p-cyan: #38bdf8;
+  --p-amber: #fbbf24;
+  --p-red: #f87171;
   flex: 0 0 auto;
   min-height: 100%;
   width: 100%;
   box-sizing: border-box;
-  padding: 28px 32px 18px;
+  padding: 32px 40px 24px;
+  color: var(--p-text);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+    var(--p-bg);
   color: var(--p-text);
   background:
     radial-gradient(ellipse at 50% 22%, #10273a70, transparent 55%), var(--p-bg);
@@ -65,13 +70,14 @@ button:disabled {
 .brand-symbol {
   width: 48px;
   height: 48px;
-  border: 1px solid #417887;
+  border: 1px solid rgba(56, 189, 248, 0.35);
   color: var(--p-cyan);
   display: grid;
   place-items: center;
   position: relative;
-  background: #0f2836;
-  box-shadow: inset 0 0 20px #6be4e809;
+  background: linear-gradient(135deg, rgba(13, 21, 36, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border-radius: 10px;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.25);
 }
 .brand-symbol::after {
   content: '';
@@ -197,9 +203,13 @@ h1 {
 .telemetry {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  border-block: 1px solid var(--p-line);
-  margin-bottom: 24px;
-  background: linear-gradient(90deg, #0f2133aa, #0c192980);
+  border: 1px solid var(--p-line);
+  border-radius: 14px;
+  margin-bottom: 28px;
+  background: linear-gradient(180deg, rgba(13, 21, 36, 0.85) 0%, rgba(8, 14, 24, 0.95) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
 }
 .metric {
   padding: 19px 24px;
@@ -497,39 +507,29 @@ h1 {
 .stage-node {
   position: relative;
   z-index: 1;
-  padding: 13px 14px 12px;
-  border: 1px solid #355467;
-  border-radius: 3px;
-  background: linear-gradient(130deg, #112b3d, #0d1d30);
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(17, 35, 59, 0.85) 0%, rgba(10, 20, 36, 0.95) 100%);
   text-align: left;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
-  box-shadow: 0 6px 18px #030b1530;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-.stage-node::after {
-  content: '';
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 8px;
-  height: 8px;
-  border-bottom: 2px solid #5899a5;
-  border-right: 2px solid #5899a5;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
 }
 .stage-node:hover {
   border-color: var(--p-cyan);
-  background: #17354a;
+  background: linear-gradient(135deg, rgba(23, 47, 78, 0.9) 0%, rgba(14, 28, 48, 0.98) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .stage-node.selected {
   border-color: var(--p-cyan);
-  box-shadow:
-    0 0 0 1px #6be4e822,
-    inset 0 0 22px #6be4e807;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 8px 30px rgba(56, 189, 248, 0.3);
+  background: linear-gradient(135deg, rgba(26, 54, 88, 0.95) 0%, rgba(14, 28, 50, 0.98) 100%);
 }
 .stage-node.attention .node-main strong {
   color: var(--p-amber);
