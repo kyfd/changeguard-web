@@ -78,24 +78,28 @@ onMounted(async () => {
 
 const hasTrends = computed(() => trendsLoaded.value && trends.value.some((t: any) => (t.submitted || 0) > 0))
 
+/* 折线图数据：阈值为至少 3 个有效点，少于 3 个点由界面展示说明 */
 function seriesPoints(getter: (t: any) => number | null, width: number, height: number) {
   const values = trends.value.map((t) => getter(t))
-  const valid = values.filter((v): v is number => v != null)
-  if (valid.length === 0) return null
-  const max = Math.max(...valid, 0.0001)
-  const step = trends.value.length > 1 ? width / (trends.value.length - 1) : 0
   const pts = values
-    .map((v, i) => {
-      if (v == null) return null
-      const x = trends.value.length > 1 ? i * step : width / 2
-      const y = height - (v / max) * (height - 6) - 3
-      return { x, y, v }
-    })
+    .map((v, i) => (v == null ? null : { x: i, y: v, v }))
     .filter(Boolean) as { x: number; y: number; v: number }[]
-  if (pts.length < 1) return null
+  if (pts.length < 3) return null
+
+  const lo = Math.min(...pts.map((p) => p.v))
+  const hi = Math.max(...pts.map((p) => p.v))
+  const span = hi - lo
+  const pad = 4
+  const usable = height - pad * 2
+  const step = width / (trends.value.length - 1)
+  const placed = pts.map((p) => ({
+    x: p.x * step,
+    y: span === 0 ? height / 2 : pad + ((hi - p.v) / span) * usable,
+    v: p.v,
+  }))
   return {
-    line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
-    dots: pts,
+    line: placed.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    dots: placed,
   }
 }
 
@@ -135,15 +139,20 @@ const approvalSeries = computed(() =>
   )
 )
 
-function lastValue(getter: (t: any) => number | null, unit = '') {
+function lastValueWithMonth(getter: (t: any) => number | null, unit = '') {
   for (let i = trends.value.length - 1; i >= 0; i--) {
-    const v = getter(trends.value[i])
+    const month = trends.value[i]
+    const v = getter(month)
     if (v != null && v >= 0) {
-      return unit === '%' ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}${unit}`
+      const text = unit === '%' ? `${Math.round(v * 100)}%` : `${Math.round(v * 10) / 10}${unit}`
+      return { text, month: String(month.month || ''), isLatest: i === trends.value.length - 1 }
     }
   }
-  return '—'
+  return { text: '—', month: '', isLatest: false }
 }
+const rejectionValue = computed(() => lastValueWithMonth((t) => (t.rejection_rate < 0 ? null : t.rejection_rate), '%'))
+const highRiskValue = computed(() => lastValueWithMonth((t) => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%'))
+const approvalValue = computed(() => lastValueWithMonth((t) => (t.approval_hours < 0 ? null : t.approval_hours)))
 </script>
 
 <template>
@@ -234,74 +243,35 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
 
         <div class="trend">
           <div class="kicker">拒绝率（定局口径）</div>
-          <strong class="now mono">{{
-            lastValue((t) => (t.rejection_rate < 0 ? null : t.rejection_rate), '%')
-          }}</strong>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline
-              v-if="rejectionSeries"
-              :points="rejectionSeries.line"
-              fill="none"
-              stroke="var(--cinnabar)"
-              stroke-width="1.8"
-            />
-            <circle
-              v-for="(p, i) in rejectionSeries?.dots || []"
-              :key="i"
-              :cx="p.x"
-              :cy="p.y"
-              r="2"
-              fill="var(--cinnabar)"
-            />
+          <strong class="now mono">{{ rejectionValue.text }}</strong>
+          <div class="trend-src mono">{{ rejectionValue.month ? (rejectionValue.isLatest ? rejectionValue.month + ' 当月' : rejectionValue.month + ' · 最新月无定局样本') : '近 6 个月无样本' }}</div>
+          <svg v-if="rejectionSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="rejectionSeries.line" fill="none" stroke="var(--cinnabar)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in rejectionSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--cinnabar)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
 
         <div class="trend">
           <div class="kicker">高危占比</div>
-          <strong class="now mono">{{
-            lastValue((t) => (t.high_risk_rate < 0 ? null : t.high_risk_rate), '%')
-          }}</strong>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline
-              v-if="highRiskSeries"
-              :points="highRiskSeries.line"
-              fill="none"
-              stroke="var(--amber)"
-              stroke-width="1.8"
-            />
-            <circle
-              v-for="(p, i) in highRiskSeries?.dots || []"
-              :key="i"
-              :cx="p.x"
-              :cy="p.y"
-              r="2"
-              fill="var(--amber)"
-            />
+          <strong class="now mono">{{ highRiskValue.text }}</strong>
+          <div class="trend-src mono">{{ highRiskValue.month ? (highRiskValue.isLatest ? highRiskValue.month + ' 当月' : highRiskValue.month + ' · 最新月无提交') : '近 6 个月无提交' }}</div>
+          <svg v-if="highRiskSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="highRiskSeries.line" fill="none" stroke="var(--amber)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in highRiskSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--amber)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
 
         <div class="trend">
           <div class="kicker">平均决策时长（小时）</div>
-          <strong class="now mono">{{
-            lastValue((t) => (t.approval_hours < 0 ? null : t.approval_hours))
-          }}</strong>
-          <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
-            <polyline
-              v-if="approvalSeries"
-              :points="approvalSeries.line"
-              fill="none"
-              stroke="var(--brand)"
-              stroke-width="1.8"
-            />
-            <circle
-              v-for="(p, i) in approvalSeries?.dots || []"
-              :key="i"
-              :cx="p.x"
-              :cy="p.y"
-              r="2"
-              fill="var(--brand)"
-            />
+          <strong class="now mono">{{ approvalValue.text }}</strong>
+          <div class="trend-src mono">{{ approvalValue.month ? (approvalValue.isLatest ? approvalValue.month + ' 当月' : approvalValue.month + ' · 最新月无审批定论') : '近 6 个月无审批定论' }}</div>
+          <svg v-if="approvalSeries" viewBox="0 0 100 40" preserveAspectRatio="none" class="spark">
+            <polyline :points="approvalSeries.line" fill="none" stroke="var(--brand)" stroke-width="1.8" vector-effect="non-scaling-stroke" />
+            <circle v-for="(p, i) in approvalSeries.dots" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--brand)" />
           </svg>
+          <div v-else class="spark-empty">样本不足，无法绘制趋势</div>
         </div>
       </div>
     </section>
@@ -521,6 +491,20 @@ function lastValue(getter: (t: any) => number | null, unit = '') {
   font-weight: var(--fw-semibold);
   color: var(--text-strong);
   margin-bottom: 8px;
+}
+.trend .trend-src {
+  display: block;
+  font-size: var(--fs-11);
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.spark-empty {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  font-size: var(--fs-11);
+  color: var(--text-faint);
 }
 
 .bars {

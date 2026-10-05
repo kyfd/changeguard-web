@@ -29,6 +29,7 @@ const navGroups = [
       { to: 'changes', label: '变更工单', icon: 'code' },
       { to: 'approvals', label: '审批中心', icon: 'check-circle' },
       { to: 'risks', label: '风险中心', icon: 'shield-alert' },
+      { to: '/agent/', label: '变更准备', icon: 'layers', external: true },
     ],
   },
   {
@@ -105,8 +106,12 @@ function goHit(hit: { to: any }) {
   router.push(hit.to)
 }
 
-function goNav(to: string) {
+function goNav(to: string, external?: boolean) {
   mobileOpen.value = false
+  if (external) {
+    window.location.assign(to)
+    return
+  }
   if (route.name !== to) router.push({ name: to })
 }
 
@@ -157,7 +162,7 @@ onBeforeUnmount(() => {
             type="button"
             class="nav-item"
             :class="{ 'router-link-active': route.name === item.to }"
-            @click="goNav(item.to)"
+            @click="goNav(item.to, (item as any).external)"
           >
             <span class="nav-ico">
               <TechIcon :name="item.icon" :size="15" />
