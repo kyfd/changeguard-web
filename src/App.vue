@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import UiToastHost from '@/components/ui/UiToastHost.vue'
 </script>
 
 <template>
@@ -8,4 +9,5 @@ import { RouterView } from 'vue-router'
       <component :is="Component" />
     </transition>
   </RouterView>
+  <UiToastHost />
 </template>
