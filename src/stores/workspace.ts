@@ -59,7 +59,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const auxErrors = ref<string[]>([])
   const loadErrors = computed(() => [...workspaceErrors.value, ...auxErrors.value.filter(e => !workspaceErrors.value.includes(e))])
 
-  onSoftError(entry => { if (!auxErrors.value.includes(entry)) auxErrors.value.push(entry) })
+  onSoftError((entry: string) => { if (!auxErrors.value.includes(entry)) auxErrors.value.push(entry) })
 
   const changes = computed(() => data.value?.changes || [])
   const apps = computed(() => data.value?.apps || [])

@@ -65,7 +65,6 @@ export function normalizePassport(raw: any, change: any): Passport {
     consumeState,
     revokedAt: p.revoked_at || '',
     evidenceState: String(p.evidence_state || evidenceState(change)).toUpperCase(),
-    verifyPath: p.verify_path || p.verify_endpoint || '',
   }
 }
 

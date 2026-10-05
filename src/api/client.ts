@@ -19,13 +19,14 @@ import {
 import {
   APIError,
   loadPassports,
+  onSoftError,
   optional,
   request,
   setSession,
   soft,
 } from './core.ts'
 
-export { APIError, setSession, normalizeChange, evidenceState, normalizePassport, listFrom }
+export { APIError, setSession, normalizeChange, evidenceState, normalizePassport, listFrom, onSoftError }
 
 export const api = {
   request,
@@ -111,8 +112,16 @@ export const api = {
   revokeInvite: (id: string) =>
     request(`/api/enterprise/invites/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
+  // 企业模型接入
+  llmConfig: () => request('/api/enterprise/llm'),
+  saveLLMConfig: (p: any) => request('/api/enterprise/llm', { method: 'PUT', body: JSON.stringify(p) }),
+  testLLM: (p: any) => request<{ ok: boolean; message: string }>('/api/enterprise/llm/test', { method: 'POST', body: JSON.stringify(p) }),
+  listLLMModels: (p: any) => request<{ models: any[] }>('/api/enterprise/llm/models', { method: 'POST', body: JSON.stringify(p) }),
+  llmPresets: () => soft<any[]>('/api/enterprise/llm/presets', []),
+  llmUsage: () => soft<any>('/api/enterprise/llm/usage', null),
+
   // 一次性加载工作区全量数据
-  async loadWorkspace(): Promise<Workspace> {
+  async loadWorkspace(errors: string[] = []): Promise<Workspace> {
     const changes = await this.changes()
     const unavailableSources: string[] = []
     async function snapshotSource<T>(source: string, path: string, fallback: T): Promise<T> {

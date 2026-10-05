@@ -76,11 +76,25 @@ export async function optional<T = any>(
   return { supported: false, path: '', data: null }
 }
 
-export async function soft<T = any>(path: string, fallback: T): Promise<T> {
+type SoftErrorListener = (entry: string) => void
+let softErrorListener: SoftErrorListener | null = null
+export function onSoftError(fn: SoftErrorListener | null) {
+  softErrorListener = fn
+}
+
+export async function soft<T = any>(path: string, fallback: T, errors?: string[]): Promise<T> {
   try {
     return await request<T>(path)
   } catch (e: any) {
     if (e?.status === 401) throw e
+    if (e?.status === 403) {
+      console.debug(`[soft] ${path} 无权限，使用空数据`)
+      return fallback
+    }
+    const entry = `${path}: ${e?.message || String(e)}`
+    console.warn(`[soft] 加载失败，已使用空数据 —— ${entry}`)
+    if (errors) errors.push(entry)
+    else softErrorListener?.(entry)
     return fallback
   }
 }
