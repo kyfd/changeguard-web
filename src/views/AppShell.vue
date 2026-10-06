@@ -17,26 +17,26 @@ const toast = useToast()
 
 const navGroups = [
   {
-    label: '工作',
+    label: '工作台',
     items: [
-      { to: 'dashboard', label: '工作台', icon: 'gauge' },
-      { to: 'panorama', label: '全景总览', icon: 'activity' },
+      { to: 'dashboard', label: '态势总览', icon: 'gauge' },
+      { to: 'panorama', label: '全景指挥室', icon: 'activity' },
     ],
   },
   {
-    label: '变更',
+    label: '变更防御',
     items: [
       { to: 'changes', label: '变更工单', icon: 'code' },
-      { to: 'approvals', label: '审批中心', icon: 'check-circle' },
-      { to: 'risks', label: '风险中心', icon: 'shield-alert' },
+      { to: 'approvals', label: '审批签署', icon: 'check-circle' },
+      { to: 'risks', label: '风险矩阵', icon: 'shield-alert' },
       { to: '/agent/', label: '变更准备', icon: 'layers', external: true },
     ],
   },
   {
-    label: '设置',
+    label: '规则与治理',
     items: [
       { to: 'policies', label: '检查规则', icon: 'shield' },
-      { to: 'apps', label: '服务', icon: 'server' },
+      { to: 'apps', label: '注册服务', icon: 'server' },
       { to: 'audits', label: '审计日志', icon: 'scroll-text' },
       { to: 'settings', label: '系统设置', icon: 'settings' },
     ],
@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
   <div class="shell" :class="{ collapsed, 'mobile-open': mobileOpen, 'deck-full': isPanorama }">
     <div v-if="mobileOpen" class="scrim" @click="mobileOpen = false"></div>
 
-    <!-- 侧边栏导航 -->
+    <!-- 浮岛微晶悬浮侧边栏 -->
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
@@ -149,7 +149,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="brand-text">
           <strong>ChangeGuard</strong>
-          <span>变更检查与审批</span>
+          <span>变更防御门禁系统</span>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
             @click="goNav(item.to, (item as any).external)"
           >
             <span class="nav-ico">
-              <TechIcon :name="item.icon" :size="15" />
+              <TechIcon :name="item.icon" :size="16" />
             </span>
             <span class="nav-label">{{ item.label }}</span>
             <span v-if="item.to === 'approvals' && pendingCount" class="nav-badge">
@@ -185,19 +185,19 @@ onBeforeUnmount(() => {
           <div>
             <strong>{{
               ws.loading
-                ? '正在读取'
+                ? '正在同步'
                 : ws.error
-                  ? '读取失败'
+                  ? '同步受阻'
                   : ws.loadedAt
-                    ? '最近更新'
-                    : '尚未读取'
+                    ? '实时快照'
+                    : '就绪'
             }}</strong>
             <span>{{
               ws.error
-                ? '请重试刷新'
+                ? '请刷新重试'
                 : ws.loadedAt
                   ? new Date(ws.loadedAt).toLocaleTimeString('zh-CN', { hour12: false })
-                  : '工作区数据'
+                  : '工作区'
             }}</span>
           </div>
         </div>
@@ -206,12 +206,12 @@ onBeforeUnmount(() => {
           @click="collapsed = !collapsed"
           :aria-label="collapsed ? '展开' : '收起'"
         >
-          <TechIcon name="chevron-right" :size="16" />
+          <TechIcon name="chevron-right" :size="14" />
         </button>
       </div>
     </aside>
 
-    <!-- 主展示区 -->
+    <!-- 现代主工作区浮岛容器 -->
     <div class="main">
       <header class="topbar">
         <div class="topbar-left">
@@ -224,23 +224,23 @@ onBeforeUnmount(() => {
           </button>
           <div class="crumb">
             <span class="crumb-root">ChangeGuard</span>
-            <TechIcon name="chevron-right" :size="13" />
+            <span class="crumb-separator">/</span>
             <span class="crumb-now">{{ pageTitle }}</span>
           </div>
         </div>
 
         <div class="topbar-right">
-          <!-- 全局搜索 -->
+          <!-- 全局搜索框 -->
           <div class="search-wrap">
             <label class="search">
-              <TechIcon name="search" :size="15" />
+              <TechIcon name="search" :size="14" />
               <input
                 v-model="query"
-                placeholder="搜索变更、服务、负责人"
+                placeholder="全局检索工单、服务、责任人"
                 @focus="searchOpen = true"
                 @blur="closeSearchLater"
               />
-              <kbd class="search-kbd" v-if="!query">Ctrl K</kbd>
+              <kbd class="search-kbd" v-if="!query">⌘K</kbd>
             </label>
             <div v-if="searchOpen && query.trim()" class="hits">
               <button
@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
                 <span class="hit-title">{{ h.title }}</span>
                 <span class="hit-sub">{{ h.sub }}</span>
               </button>
-              <div v-if="!hits.length" class="hit-empty">没有匹配结果</div>
+              <div v-if="!hits.length" class="hit-empty">无匹配项</div>
             </div>
           </div>
 
@@ -262,16 +262,16 @@ onBeforeUnmount(() => {
           <button
             class="ghost-btn"
             type="button"
-            :aria-label="theme.isLight.value ? '切换为深色' : '切换为浅色'"
+            :aria-label="theme.isLight.value ? '深色模式' : '浅色模式'"
             @click="theme.toggle()"
           >
             <TechIcon :name="theme.isLight.value ? 'moon' : 'sun'" :size="16" />
           </button>
 
-          <!-- 实时时钟 -->
+          <!-- 实时时间 -->
           <div class="clock mono">{{ clock }}</div>
 
-          <!-- 用户标识 -->
+          <!-- 用户身份胶囊 -->
           <div class="user-chip">
             <span class="avatar">{{
               (auth.user?.name || auth.user?.email || 'CG').slice(0, 2).toUpperCase()
@@ -280,8 +280,8 @@ onBeforeUnmount(() => {
               <strong>{{ auth.user?.name || '操作员' }}</strong>
               <span>{{ auth.role }}</span>
             </div>
-            <button class="ghost-btn" @click="doLogout" aria-label="退出">
-              <TechIcon name="logout" :size="16" />
+            <button class="ghost-btn logout-btn" @click="doLogout" aria-label="退出登录">
+              <TechIcon name="logout" :size="15" />
             </button>
           </div>
         </div>
@@ -290,7 +290,7 @@ onBeforeUnmount(() => {
       <main class="content" :class="{ 'content-deck': isPanorama }">
         <div v-if="!isPanorama && ws.loading && !ws.data" class="loading-screen">
           <div class="loader-ring"></div>
-          <span>正在读取工作区数据…</span>
+          <span>正在同步生产防护态势…</span>
         </div>
         <div v-if="!isPanorama && ws.error" class="workspace-error" role="alert">
           {{ ws.error }}
@@ -312,32 +312,40 @@ onBeforeUnmount(() => {
   grid-template-columns: var(--sidebar) 1fr;
   height: 100dvh;
   transition: grid-template-columns var(--dur) var(--ease);
+  padding: 12px;
+  gap: 12px;
 }
 .shell.collapsed {
-  --sidebar: 72px;
+  --sidebar: 76px;
 }
 .scrim {
   display: none;
 }
 
+/* 浮岛微晶悬浮侧边栏 */
 .sidebar {
   position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-deep);
-  border-right: 1px solid var(--line);
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
   padding: 16px 12px;
-  gap: 4px;
+  gap: 6px;
   z-index: 20;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-panel);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 10px 20px;
+  padding: 8px 10px 18px;
+  border-bottom: 1px solid var(--line);
 }
 .brand-mark {
   width: 36px;
@@ -348,7 +356,7 @@ onBeforeUnmount(() => {
   border-radius: var(--r-lg);
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-bright) 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45);
 }
 .brand-text {
   display: flex;
@@ -359,13 +367,13 @@ onBeforeUnmount(() => {
 .brand-text strong {
   font-size: var(--fs-14);
   color: var(--text-strong);
-  letter-spacing: -0.01em;
-  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 .brand-text span {
   font-size: var(--fs-11);
   color: var(--text-faint);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 .collapsed .brand-text,
 .collapsed .nav-label,
@@ -378,32 +386,33 @@ onBeforeUnmount(() => {
 .nav {
   flex: 1 1 auto;
   min-height: 0;
-  padding: var(--sp-1) var(--sp-2) var(--sp-3);
+  padding: 8px 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   overflow-y: auto;
   position: relative;
   z-index: 2;
 }
 .nav-group {
-  padding: 14px 8px 6px;
+  padding: 14px 10px 6px;
   font-family: var(--font-mono);
-  font-size: var(--fs-11);
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-mute);
+  color: var(--text-faint);
+  font-weight: var(--fw-semibold);
 }
 .nav-group:first-child {
-  padding-top: 6px;
+  padding-top: 4px;
 }
 .nav-item {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: var(--r);
+  padding: 9px 12px;
+  border-radius: var(--r-lg);
   color: var(--text-mute);
   font-size: var(--fs-13);
   font-weight: var(--fw-medium);
@@ -411,7 +420,6 @@ onBeforeUnmount(() => {
   width: 100%;
   text-align: left;
   cursor: pointer;
-  pointer-events: auto;
 }
 .nav-item:hover {
   background: var(--bg-elev);
@@ -427,8 +435,8 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
+  top: 10px;
+  bottom: 10px;
   width: 3px;
   background: var(--brand);
   border-radius: 0 4px 4px 0;
@@ -445,13 +453,14 @@ onBeforeUnmount(() => {
 }
 .nav-badge {
   margin-left: auto;
-  font-size: var(--fs-11);
+  font-size: 10px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   background: var(--amber-soft);
   color: var(--amber);
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: var(--r-pill);
+  font-weight: var(--fw-semibold);
 }
 .nav-item.router-link-active .nav-badge {
   color: var(--brand);
@@ -463,7 +472,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-3);
+  padding: 12px 6px 4px;
   border-top: 1px solid var(--line);
   position: relative;
   z-index: 1;
@@ -482,11 +491,11 @@ onBeforeUnmount(() => {
 .svc strong {
   display: block;
   font-size: var(--fs-12);
-  color: var(--text);
+  color: var(--text-strong);
   font-weight: var(--fw-medium);
 }
 .svc span {
-  font-size: var(--fs-11);
+  font-size: 10px;
   font-family: var(--font-mono);
   color: var(--text-faint);
 }
@@ -499,7 +508,7 @@ onBeforeUnmount(() => {
   border-radius: var(--r-sm);
   border: 1px solid var(--line);
   color: var(--text-faint);
-  transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+  transition: all var(--dur-fast);
 }
 .collapse:hover {
   color: var(--brand);
@@ -507,6 +516,24 @@ onBeforeUnmount(() => {
   background: var(--bg-elev);
 }
 .collapsed .collapse svg {
+  transform: rotate(180deg);
+}
+
+/* 主内容浮岛容器 */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
 .topbar {
   height: var(--topbar);
   flex: none;
@@ -516,12 +543,7 @@ onBeforeUnmount(() => {
   gap: var(--sp-4);
   padding: 0 var(--sp-6);
   border-bottom: 1px solid var(--line);
-  background: var(--bg-glass-strong);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-  backdrop-filter: blur(8px);
+  background: transparent;
 }
 .topbar-left {
   display: flex;
@@ -538,15 +560,20 @@ onBeforeUnmount(() => {
 .crumb-root {
   color: var(--text-mute);
 }
+.crumb-separator {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+}
 .crumb-now {
   color: var(--text-strong);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
 }
 .topbar-right {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
 }
+
 .search-wrap {
   position: relative;
 }
@@ -554,16 +581,17 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  height: 32px;
-  padding: 0 10px;
-  border-radius: var(--r);
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-lg);
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--text-faint);
-  width: 240px;
+  width: 250px;
+  transition: all var(--dur-fast);
 }
 .search:focus-within {
-  border-color: var(--line-bright);
+  border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--brand-soft);
   background: var(--surface);
 }
@@ -584,29 +612,29 @@ onBeforeUnmount(() => {
   font-family: var(--font-mono);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  padding: 1px 4px;
-  border-radius: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
   color: var(--text-faint);
 }
 .hits {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   width: 360px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow-panel);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-pop);
   z-index: 30;
   overflow: hidden;
 }
 .hit {
   width: 100%;
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 48px 1fr auto;
   gap: var(--sp-2);
   align-items: center;
-  padding: var(--sp-2) var(--sp-3);
+  padding: 10px 14px;
   text-align: left;
   color: var(--text);
   border-bottom: 1px solid var(--line);
@@ -615,9 +643,9 @@ onBeforeUnmount(() => {
   background: var(--bg-elev);
 }
 .hit-kind {
-  font-size: var(--fs-11);
-  letter-spacing: 0;
+  font-size: 11px;
   color: var(--brand);
+  font-weight: var(--fw-medium);
 }
 .hit-title {
   font-size: var(--fs-13);
@@ -626,7 +654,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 .hit-sub {
-  font-size: var(--fs-11);
+  font-size: 11px;
   color: var(--text-faint);
 }
 .hit-empty {
@@ -635,31 +663,34 @@ onBeforeUnmount(() => {
   font-size: var(--fs-12);
   text-align: center;
 }
+
 .clock {
   font-size: var(--fs-12);
   color: var(--text-mute);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-medium);
 }
+
 .user-chip {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  height: 32px;
-  padding: 0 var(--sp-2);
+  gap: 10px;
+  height: 36px;
+  padding: 0 8px;
 }
 .avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--r);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
   display: grid;
   place-items: center;
-  background: var(--brand-soft);
-  color: var(--brand);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-bright) 100%);
+  color: #fff;
   font-weight: var(--fw-semibold);
   font-size: var(--fs-11);
   flex: none;
-  border: 1px solid var(--line-bright);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
 }
 .user-meta {
   display: flex;
@@ -671,9 +702,10 @@ onBeforeUnmount(() => {
   color: var(--text-strong);
 }
 .user-meta span {
-  font-size: var(--fs-10);
+  font-size: 10px;
   color: var(--text-faint);
   text-transform: uppercase;
+  font-family: var(--font-mono);
 }
 
 .ghost-btn {
@@ -681,8 +713,8 @@ onBeforeUnmount(() => {
   border: none;
   color: var(--text-mute);
   cursor: pointer;
-  padding: 6px;
-  border-radius: var(--r-sm);
+  padding: 8px;
+  border-radius: var(--r);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -692,30 +724,52 @@ onBeforeUnmount(() => {
   background: var(--bg-elev);
   color: var(--text-strong);
 }
+.mobile-menu {
+  display: none;
+}
 
 .content {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  position: relative;
 }
 .content-deck {
   padding: 0;
 }
 
+.shell.deck-full {
+  grid-template-columns: 1fr;
+  padding: 0;
+  gap: 0;
+}
+.shell.deck-full .sidebar,
+.shell.deck-full .topbar,
+.shell.deck-full .scrim {
+  display: none;
+}
+.shell.deck-full .main {
+  border-radius: 0;
+  border: none;
+}
+
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .dot-ok {
   background: var(--jade);
+  box-shadow: 0 0 6px var(--jade);
 }
 .dot-warn {
   background: var(--amber);
+  box-shadow: 0 0 6px var(--amber);
 }
 .dot-err {
   background: var(--cinnabar);
+  box-shadow: 0 0 6px var(--cinnabar);
 }
 
 .loading-screen {
@@ -728,10 +782,9 @@ onBeforeUnmount(() => {
   color: var(--text-mute);
   font-size: var(--fs-13);
 }
-
 .loader-ring {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: 3px solid var(--line);
   border-top-color: var(--brand);
   border-radius: 50%;
@@ -743,24 +796,51 @@ onBeforeUnmount(() => {
   padding: var(--sp-3) var(--sp-4);
   background: var(--cinnabar-soft);
   color: var(--cinnabar);
-  border-radius: var(--r);
+  border-radius: var(--r-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.workspace-error button {
-  background: var(--surface);
-  border: 1px solid var(--cinnabar);
-  color: var(--cinnabar);
-  padding: 2px 8px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
+@media (max-width: 880px) {
+  .shell {
+    grid-template-columns: 1fr;
+    padding: 8px;
+    gap: 8px;
+  }
+  .sidebar {
+    display: none;
+  }
+  .shell.mobile-open .sidebar {
+    display: flex;
+    position: fixed;
+    inset: 8px auto 8px 8px;
+    width: min(280px, 86vw);
+    z-index: 40;
+    box-shadow: var(--shadow-pop);
+  }
+  .shell.mobile-open .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 30;
+  }
+  .mobile-menu {
+    display: grid;
+  }
+  .search {
+    width: 180px;
+  }
+  .hits {
+    width: 260px;
+    right: 0;
+    left: auto;
+  }
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 </style>
