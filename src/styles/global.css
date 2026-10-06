@@ -4,42 +4,57 @@
 * { margin: 0; padding: 0; }
 html, body, #app { height: 100%; width: 100%; }
 html { font-size: 16px; }
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-void);
-  /* 现代高科技点阵微背景纹理与多重环境光晕 */
+  /* Awwwards 极光深空光影：上深紫、中电光蓝、底极光青微光云 */
   background-image:
-    radial-gradient(var(--line) 1px, transparent 1px),
-    radial-gradient(circle at 15% 10%, rgba(79, 70, 229, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 40%);
-  background-size: 24px 24px, 100% 100%, 100% 100%;
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 60%, rgba(34, 211, 238, 0.10), transparent 60%),
+    radial-gradient(circle at 10% 80%, rgba(192, 132, 252, 0.08), transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   color: var(--text);
   line-height: var(--lh-base);
   font-size: var(--fs-14);
   overflow: hidden;
-  letter-spacing: -0.011em;
+  letter-spacing: -0.015em;
 }
-:root[data-theme="dark"] body {
+
+:root[data-theme="light"] body {
   background-image:
-    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    radial-gradient(circle at 20% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 80% 90%, rgba(34, 211, 238, 0.08) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 60%, rgba(34, 211, 238, 0.05), transparent 60%),
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
 }
+
 #app { height: 100dvh; }
 
 h1, h2, h3, h4 {
   color: var(--text-strong);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
   font-family: var(--font-sans);
 }
-h1 { font-size: 28px; letter-spacing: -0.03em; font-weight: var(--fw-bold); }
-h2 { font-size: 20px; letter-spacing: -0.02em; }
-h3 { font-size: 16px; letter-spacing: -0.015em; }
-h4 { font-size: 14px; }
 
-a { color: var(--brand-bright); text-decoration: none; transition: color var(--dur-fast); }
-a:hover { color: var(--brand); }
+/* Awwwards 级金属冷银高光渐变标题 */
+.text-metallic {
+  background: linear-gradient(180deg, #ffffff 15%, rgba(255, 255, 255, 0.65) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-theme="light"] .text-metallic {
+  background: linear-gradient(180deg, #0f172a 20%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+a { color: var(--brand-bright); text-decoration: none; transition: all var(--dur-fast); }
+a:hover { color: #fff; text-shadow: 0 0 10px var(--brand); }
 
 button, input, textarea, select { font-family: inherit; font-size: inherit; line-height: inherit; }
 button { cursor: pointer; border: none; background: none; color: inherit; }
@@ -54,75 +69,39 @@ code, kbd, samp, pre, time {
 table { font-variant-numeric: tabular-nums; }
 
 :focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+  outline: 2px solid var(--brand-bright);
+  outline-offset: 3px;
+  box-shadow: 0 0 15px var(--brand);
 }
 
-/* 现代精致平滑滚动条 */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* 隐形高科技细滚动条 */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: var(--r-pill);
-  transition: background var(--dur-fast);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--text-mute); }
-* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .latin { font-family: var(--font-brand); }
-.display { font-family: var(--font-sans); font-weight: 650; letter-spacing: -0.02em; }
 
-.kicker {
-  font-family: var(--font-mono);
-  font-size: var(--fs-11);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  font-weight: var(--fw-medium);
+/* 悬停微发光光环 */
+.hover-glow {
+  transition: all var(--dur) var(--ease);
 }
-.text-mute { color: var(--text-mute); }
-.text-faint { color: var(--text-faint); }
-.text-brand { color: var(--brand); }
-.text-danger { color: var(--cinnabar); }
-
-.dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  position: relative;
-}
-.dot-ok {
-  background: var(--jade);
-  box-shadow: 0 0 0 3px var(--jade-soft), 0 0 8px rgba(16, 185, 129, 0.4);
-}
-.dot-warn {
-  background: var(--amber);
-  box-shadow: 0 0 0 3px var(--amber-soft), 0 0 8px rgba(245, 158, 11, 0.4);
-}
-.dot-err {
-  background: var(--cinnabar);
-  box-shadow: 0 0 0 3px var(--cinnabar-soft), 0 0 8px rgba(239, 68, 68, 0.4);
+.hover-glow:hover {
+  box-shadow: 0 0 30px -5px rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.5) !important;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes float-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.96); }
+  0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 6px currentColor); }
+  50% { opacity: 0.6; transform: scale(0.92); filter: drop-shadow(0 0 2px currentColor); }
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 160ms var(--ease), transform 160ms var(--ease);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
 }
-.fade-enter-from { opacity: 0; transform: translateY(4px); }
-.fade-leave-to { opacity: 0; transform: translateY(-4px); }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
+.fade-enter-from { opacity: 0; transform: translateY(6px); }
+.fade-leave-to { opacity: 0; transform: translateY(-6px); }
