@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-glass-strong);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-2xl);
   padding: 16px 12px;
@@ -526,7 +526,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-glass-strong);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-2xl);
   box-shadow: var(--shadow-panel);

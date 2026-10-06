@@ -1,93 +1,49 @@
 /* ============================================================
-   ChangeGuard · Awwwards-Tier Avant-Garde Cyber Design System
-   Obsidian Canvas · Atmospheric Mesh Aurora · Prismatic Glass
+   ChangeGuard · High-Contrast Precision Console Design System
+   Clarity First · Crisp Typography · Pure Contrast · No Muddy Grays
    ============================================================ */
 
-@font-face {
-  font-family: "Space Grotesk";
-  src: url("../assets/fonts/space-grotesk-latin.woff2") format("woff2");
-  font-weight: 400 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Space Grotesk";
-  src: url("../assets/fonts/space-grotesk-latin-600.woff2") format("woff2");
-  font-weight: 600 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  src: url("../assets/fonts/jetbrains-mono-latin.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  src: url("../assets/fonts/jetbrains-mono-latin-500.woff2") format("woff2");
-  font-weight: 500 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  /* 默认深空暗黑黑曜石美学 */
-  --bg-void: #030712;
-  --bg-deep: #080d1a;
-  --bg-base: #0b1120;
-  --bg-elev: #111827;
-  --bg-glass: rgba(11, 17, 32, 0.72);
-  --bg-glass-strong: rgba(15, 23, 42, 0.82);
+  /* 默认清晰冷白背景与纯白微晶卡片 */
+  --bg-void: #f8fafc;
+  --bg-deep: #f1f5f9;
+  --bg-base: #ffffff;
+  --bg-elev: #f1f5f9;
 
-  --surface: rgba(15, 23, 42, 0.65);
-  --surface-2: rgba(30, 41, 59, 0.5);
-  --surface-elev: rgba(30, 41, 59, 0.8);
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-sunken: #f1f5f9;
 
-  --text-strong: #ffffff;
-  --text: #e2e8f0;
-  --text-mute: #94a3b8;
+  /* 文字颜色：高对比度、清晰锋利 */
+  --text-strong: #0f172a;
+  --text: #1e293b;
+  --text-mute: #475569;
   --text-faint: #64748b;
-  --text-inverse: #030712;
+  --text-inverse: #ffffff;
 
-  /* 品牌色：高饱和电光蓝靛蓝与先锋极光青 */
-  --brand: #6366f1;
-  --brand-bright: #818cf8;
-  --brand-deep: #4f46e5;
-  --brand-soft: rgba(99, 102, 241, 0.16);
+  /* 状态强调色：高饱和、明确可读 */
+  --brand: #4338ca;
+  --brand-bright: #4f46e5;
+  --brand-deep: #3730a3;
+  --brand-soft: rgba(79, 70, 229, 0.08);
 
-  --cyan: #22d3ee;
-  --cyan-bright: #38bdf8;
-  --cyan-soft: rgba(34, 211, 238, 0.16);
+  --cyan: #0284c7;
+  --cyan-bright: #0369a1;
+  --cyan-soft: rgba(2, 132, 199, 0.08);
 
-  --cinnabar: #fb7185;
-  --cinnabar-soft: rgba(251, 113, 133, 0.15);
-  --amber: #fbbf24;
-  --amber-soft: rgba(251, 191, 36, 0.15);
-  --jade: #34d399;
-  --jade-bright: #4ade80;
-  --jade-soft: rgba(52, 211, 153, 0.15);
+  --cinnabar: #e11d48;
+  --cinnabar-soft: rgba(225, 29, 72, 0.08);
+  --amber: #d97706;
+  --amber-soft: rgba(217, 119, 6, 0.08);
+  --jade: #059669;
+  --jade-bright: #10b981;
+  --jade-soft: rgba(5, 150, 105, 0.08);
 
   --red: var(--cinnabar);
-  --red-bright: #fda4af;
-  --red-soft: var(--cinnabar-soft);
   --green: var(--jade);
-  --green-bright: var(--jade-bright);
-  --green-soft: var(--jade-soft);
-  --purple: #c084fc;
-  --purple-soft: rgba(192, 132, 252, 0.15);
   --gold: var(--brand);
-  --gold-bright: var(--brand-bright);
-  --gold-deep: var(--brand-deep);
-  --gold-soft: var(--brand-soft);
   --ice: var(--cyan);
-  --ice-bright: var(--cyan-bright);
-  --ice-deep: #0284c7;
-  --ice-soft: var(--cyan-soft);
   --blue: var(--brand);
-  --blue-bright: var(--brand-bright);
-  --blue-soft: var(--brand-soft);
   --primary: var(--brand);
 
   --risk-high: var(--cinnabar);
@@ -95,17 +51,17 @@
   --risk-low: var(--brand);
   --risk-unknown: var(--text-faint);
 
-  /* Awwwards 级高精度微晶 1px 细线与高光微槽 */
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --line-bright: rgba(99, 102, 241, 0.6);
+  /* 清晰锐利的 1px 边框 */
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --line-bright: rgba(79, 70, 229, 0.35);
 
   --r-xs: 4px;
-  --r-sm: 8px;
-  --r: 12px;
-  --r-lg: 16px;
-  --r-xl: 22px;
-  --r-2xl: 28px;
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-2xl: 24px;
   --r-pill: 9999px;
 
   --fs-11: 11px;
@@ -137,68 +93,65 @@
   --sp-10: 40px;
   --sp-12: 48px;
 
-  --font-sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
-  --font-display: "Space Grotesk", var(--font-sans);
-  --font-brand: "Space Grotesk", var(--font-sans);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-display: var(--font-sans);
+  --font-brand: var(--font-sans);
   --font-latin: var(--font-brand);
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
 
-  /* 多层级先锋弥散环境光与晶体反射 */
-  --shadow-panel: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-pop: 0 25px 60px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  --shadow-glow: 0 0 35px rgba(99, 102, 241, 0.35);
+  /* 清爽高级投影：绝不使用发脏的大面积模糊 */
+  --shadow-panel: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-pop: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 4px 10px rgba(15, 23, 42, 0.04);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-fast: 0.15s;
-  --dur: 0.25s;
-  --dur-slow: 0.4s;
+  --dur-fast: 0.12s;
+  --dur: 0.2s;
 
-  --sidebar: 250px;
-  --topbar: 64px;
+  --sidebar: 240px;
+  --topbar: 60px;
 
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg-void);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 浅色模式保持同样严谨的奢华纯白感 */
-:root[data-theme="light"] {
-  --bg-void: #f8fafc;
-  --bg-deep: #f1f5f9;
-  --bg-base: #ffffff;
-  --bg-elev: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-glass-strong: rgba(255, 255, 255, 0.95);
+/* 深色模式：纯粹石墨黑曜石，绝不发灰浑浊 */
+:root[data-theme="dark"] {
+  --bg-void: #090d16;
+  --bg-deep: #0f172a;
+  --bg-base: #1e293b;
+  --bg-elev: #334155;
 
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --surface-elev: #f1f5f9;
+  --surface: #0f172a;
+  --surface-2: #1e293b;
+  --surface-sunken: #090d16;
 
-  --text-strong: #0f172a;
-  --text: #334155;
-  --text-mute: #64748b;
+  --text-strong: #ffffff;
+  --text: #f1f5f9;
+  --text-mute: #cbd5e1;
   --text-faint: #94a3b8;
-  --text-inverse: #ffffff;
+  --text-inverse: #090d16;
 
-  --brand: #4f46e5;
-  --brand-bright: #6366f1;
-  --brand-deep: #4338ca;
-  --brand-soft: rgba(79, 70, 229, 0.08);
+  --brand: #6366f1;
+  --brand-bright: #818cf8;
+  --brand-deep: #4f46e5;
+  --brand-soft: rgba(99, 102, 241, 0.16);
 
-  --cyan: #06b6d4;
-  --cyan-bright: #22d3ee;
-  --cyan-soft: rgba(6, 182, 212, 0.08);
+  --cyan: #38bdf8;
+  --cinnabar: #fb7185;
+  --amber: #fbbf24;
+  --jade: #34d399;
 
-  --line: rgba(148, 163, 184, 0.22);
-  --line-strong: rgba(148, 163, 184, 0.38);
-  --line-bright: rgba(79, 70, 229, 0.45);
+  --line: #1e293b;
+  --line-strong: #334155;
+  --line-bright: rgba(99, 102, 241, 0.45);
 
-  --shadow-panel: 0 10px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-card: 0 4px 15px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-pop: 0 20px 45px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-panel: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 20px 40px -8px rgba(0, 0, 0, 0.7);
 
-  color-scheme: light;
+  color-scheme: dark;
 }
